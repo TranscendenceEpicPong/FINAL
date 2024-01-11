@@ -41,7 +41,7 @@ class UserLoginForm(forms.ModelForm):
         fields = ['username', 'password']
 
     def clean(self):
-        if self.is_valid() == False:
+        if not self.is_valid():
             raise forms.ValidationError(
                 "identifiant ou mot de passe incorrect"
             )

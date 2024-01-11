@@ -99,10 +99,34 @@ class AuthenticationTestCase(TestCase):
     def test_login_endpoint_should_not_be_static(self):
         client = AuthClient()
         auth_response = client.post(f"/{random_path}", {
-            "email": self.creds["email"],
+            "username": self.creds["username"],
             "password": self.creds["password"],
         })
         self.assertEqual(auth_response.status_code, 200)
+
+    def test_validate_post_data(self):
+        client = AuthClient()
+        auth_response = client.post(f"/authentication/login", {
+            "not-a-username": self.creds["email"],
+            "password": self.creds["password"],
+        })
+        self.assertEqual(auth_response.status_code, 400)
+
+    def test_login_wrong_username(self):
+        client = AuthClient()
+        auth_response = client.post(f"/authentication/login", {
+            "username": "wrong",
+            "password": self.creds["password"],
+        })
+        self.assertEqual(auth_response.status_code, 401)
+
+    def test_login_wrong_password(self):
+        client = AuthClient()
+        auth_response = client.post(f"/authentication/login", {
+            "username": self.creds["username"],
+            "password": "wrong",
+        })
+        self.assertEqual(auth_response.status_code, 401)
 
     def call_and_assert_unauthenticated(self):
         client = AuthClient()
@@ -134,7 +158,7 @@ class AuthenticationTestCase(TestCase):
 
         # instead of the default behaviour (redirect), we should just throw 401
         response = client.call_restricted()
-        self.assertEqual(response.status_code, 401)
+        self.assertEqual(response.status_code, 403)
 
     @modify_settings(MIDDLEWARE={
         'remove': 'authentication.middleware.CustomAuthenticationMiddleware',
@@ -155,7 +179,7 @@ class AuthenticationTestCase(TestCase):
         text = ''.join(random.choices(string.ascii_lowercase, k=5))
         response = client.call_add(text)
         # The path '/add' is not allowed in the middleware, so it should fail
-        self.assertEqual(response.status_code, 401)
+        self.assertEqual(response.status_code, 403)
         # And this should raise an exception:
         self.assertRaises(Dummy.DoesNotExist, Dummy.objects.get, text=text)
 

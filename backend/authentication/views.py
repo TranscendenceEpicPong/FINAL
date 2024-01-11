@@ -1,4 +1,4 @@
-from django.http import HttpResponse, JsonResponse
+from django.http import HttpResponse, JsonResponse, HttpResponseBadRequest
 from django.views.decorators.http import require_POST
 import datetime
 from django.contrib.auth import authenticate as django_authenticate, login as django_login, get_user_model
@@ -38,7 +38,7 @@ def perform_auth(request, creds):
 def login(request):
     form = UserLoginForm(request.POST)
     if not form.is_valid():
-        return HttpResponse(form.errors)
+        return HttpResponseBadRequest(form.errors)
 
     if perform_auth(request, form.cleaned_data) is None:
         return HttpResponse("Wrong credentials", status=401)

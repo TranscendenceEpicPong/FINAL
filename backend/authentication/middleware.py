@@ -11,10 +11,12 @@ def CustomAuthenticationMiddleware(get_response):
     def middleware(request: HttpRequest):
         if request.path in settings.UNAUTHENTICATED_REQUESTS:
             return get_response(request)
-        elif not request.user.is_authenticated:
+        elif not getattr(request, 'user', None) or not request.user.is_authenticated:
             return HttpResponseForbidden()
 
         authorization = request.COOKIES.get('authorization')
+        if not authorization:
+            return HttpResponse("Missing token", status=401)
         # sessionId = request.COOKIES.get('sessionid')
         # session_key = request.session.session_key
 
