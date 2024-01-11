@@ -1,12 +1,10 @@
 from django.http import HttpResponse, JsonResponse
 from django.views.decorators.http import require_POST
-from core.models import EpicPongUser as User
 import datetime
 from django.contrib.auth import authenticate as django_authenticate, login as django_login, get_user_model
 from .forms import UserRegisterForm, UserLoginForm
-# from jwt import JWT
 import jwt
-from django.db.models import Q
+from backend.settings import env
 
 
 def set_token_cookie(request, response, user):
@@ -16,7 +14,7 @@ def set_token_cookie(request, response, user):
         'sessionId': request.session.session_key,
         'iat': datetime.datetime.utcnow(),
         'exp': datetime.datetime.utcnow() + datetime.timedelta(days=1)
-    }, 'ENV_secret')
+    }, env('JWT_SECRET'))
 
     response.set_cookie('authorization',
                         value=token,
