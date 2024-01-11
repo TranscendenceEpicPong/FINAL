@@ -21,7 +21,10 @@ env = environ.Env(
     DB_HOST=(str, '127.0.0.1'),
     DB_PORT=(str, '5432'),
     MYPY_DJANGO_CONFIG=(str, './mypy.ini'),
+    JWT_SECRET=(str, 'SECRET'),
 )
+
+UNAUTHENTICATED_REQUESTS = ['/authentication/login', '/authentication/register']
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
