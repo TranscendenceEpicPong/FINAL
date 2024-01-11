@@ -93,13 +93,16 @@ class AuthenticationTestCase(TestCase):
         response = client.call_user_details()
         self.assertEqual(response.content.decode(), self.creds["email"])
 
-    # def test_login_endpoint_should_not_be_static(self):
-    #     client = AuthClient()
-    #     auth_response = client.post(f"/{random_path}/", {
-    #         "email": self.creds["email"],
-    #         "password": self.creds["password"],
-    #     })
-    #     self.assertEqual(auth_response.status_code, 200)
+    @modify_settings(UNAUTHENTICATED_REQUESTS={
+        'append': f"/{random_path}",
+    })
+    def test_login_endpoint_should_not_be_static(self):
+        client = AuthClient()
+        auth_response = client.post(f"/{random_path}", {
+            "email": self.creds["email"],
+            "password": self.creds["password"],
+        })
+        self.assertEqual(auth_response.status_code, 200)
 
     def call_and_assert_unauthenticated(self):
         client = AuthClient()
@@ -123,12 +126,15 @@ class AuthenticationTestCase(TestCase):
         response = client.call_restricted()
         self.assertRedirects(response, settings.LOGIN_URL + '?next=/restricted', fetch_redirect_response=False)
 
-    # def test_custom_unauthenticated(self):
-    #     client = self.call_and_assert_unauthenticated()
-    #
-    #     # instead of the default behaviour (redirect), we should just throw 401
-    #     response = client.call_restricted()
-    #     self.assertEqual(response.status_code, 401)
+    @modify_settings(UNAUTHENTICATED_REQUESTS={
+        'append': ["/unrestricted", "/user_details"],
+    })
+    def test_custom_unauthenticated(self):
+        client = self.call_and_assert_unauthenticated()
+
+        # instead of the default behaviour (redirect), we should just throw 401
+        response = client.call_restricted()
+        self.assertEqual(response.status_code, 401)
 
     @modify_settings(MIDDLEWARE={
         'remove': 'authentication.middleware.CustomAuthenticationMiddleware',

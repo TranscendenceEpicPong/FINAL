@@ -1,5 +1,5 @@
 import jwt
-from django.http import HttpResponse
+from django.http import HttpResponse, HttpResponseForbidden, HttpRequest
 from backend.settings import env
 from django.conf import settings
 
@@ -8,9 +8,11 @@ from django.conf import settings
 #       Or make token based authentication using blacklist, token families, refresh etc...
 
 def CustomAuthenticationMiddleware(get_response):
-    def middleware(request):
+    def middleware(request: HttpRequest):
         if request.path in settings.UNAUTHENTICATED_REQUESTS:
             return get_response(request)
+        elif not request.user.is_authenticated:
+            return HttpResponseForbidden()
 
         authorization = request.COOKIES.get('authorization')
         # sessionId = request.COOKIES.get('sessionid')
