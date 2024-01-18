@@ -21,7 +21,10 @@ env = environ.Env(
     DB_HOST=(str, '127.0.0.1'),
     DB_PORT=(str, '5432'),
     MYPY_DJANGO_CONFIG=(str, './mypy.ini'),
+    JWT_SECRET=(str, 'SECRET'),
 )
+
+UNAUTHENTICATED_REQUESTS = ['/authentication/login', '/authentication/register']
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -47,17 +50,18 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-
     'backend',
-    'tournament_app'
+    'core',
+    'tournament_app',
+    'authentication',
 ]
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
-    'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
+    'authentication.middleware.CustomAuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
@@ -134,3 +138,10 @@ STATIC_URL = 'static/'
 # https://docs.djangoproject.com/en/4.2/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+SESSION_ENGINE = "django.contrib.sessions.backends.db"
+SESSION_COOKIE_AGE = 3600
+
+AUTH_USER_MODEL = 'core.EpicPongUser'
+
+AUTHENTICATION_BACKENDS = ['django.contrib.auth.backends.ModelBackend']
