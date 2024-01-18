@@ -11,9 +11,8 @@ def set_token_cookie(request, response, user):
     token = jwt.encode({
         'username': user.username,
         'email': user.email,
-        'sessionId': request.session.session_key,
-        'iat': datetime.datetime.utcnow(),
-        'exp': datetime.datetime.utcnow() + datetime.timedelta(days=1)
+        'iat': datetime.datetime.now(),
+        'exp': datetime.datetime.now() + datetime.timedelta(days=1)
     }, env('JWT_SECRET'))
 
     response.set_cookie('authorization',
@@ -45,7 +44,7 @@ def login(request):
 
     user = form.instance
 
-    response = HttpResponse("Login successfully!")
+    response = HttpResponse("Logged in successfully!")
     set_token_cookie(request, response, user)
 
     return response
@@ -57,13 +56,14 @@ def register(request):
     form = UserRegisterForm(raw_data)
 
     if not form.is_valid():
-        return JsonResponse(form.errors)
+        return HttpResponseBadRequest(form.errors)
 
     user = form.save()
 
-    perform_auth(request, form.cleaned_data)
+    if perform_auth(request, form.cleaned_data) is None:
+        return HttpResponse("Wrong credentials", status=401)
 
-    response = HttpResponse("Registration successfully!")
+    response = HttpResponse("Registered successfully!")
     set_token_cookie(request, response, user)
 
     return response

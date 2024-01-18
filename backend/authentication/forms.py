@@ -34,6 +34,14 @@ class UserRegisterForm(forms.ModelForm):
             )
         return cleaned_data
 
+    def save(self, commit=True):
+        user = EpicPongUser.objects.create_user(
+            username=self.cleaned_data["username"],
+            password=self.cleaned_data["password"],
+            email=self.cleaned_data["email"]
+        )
+        return user
+
 
 class UserLoginForm(forms.ModelForm):
     class Meta:

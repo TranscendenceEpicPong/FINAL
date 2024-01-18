@@ -12,6 +12,8 @@ from django.views.decorators.http import require_POST
 
 from authentication import views
 from authentication.tests.models import Dummy
+from core.models import EpicPongUser
+
 
 
 @login_required
@@ -42,6 +44,7 @@ random_path = ''.join(random.choices(string.ascii_lowercase, k=5))
 urlpatterns = [
     path(random_path, views.login),
     path("authentication/login", views.login),
+    path("authentication/register", views.register),
     path("default_auth/", include("django.contrib.auth.urls")),
     path("restricted", restricted_view),
     path("unrestricted", unrestricted_view),
@@ -62,6 +65,9 @@ class AuthClient(Client):
 
     def call_add(self, text):
         return self.post('/add', {"text": text})
+
+    def register(self, data):
+        return self.post('/authentication/register', data)
 
 
 @override_settings(ROOT_URLCONF=__name__)
@@ -214,3 +220,45 @@ class CustomAuthenticationTestCase(TestCase):
     def test_call_user_details(self):
         response = self.client.call_user_details()
         self.assertEqual(response.content.decode(), self.creds["email"])
+
+
+@override_settings(ROOT_URLCONF=__name__)
+class CustomRegistrationTestCase(TestCase):
+    def test_register_only_once(self):
+        client = AuthClient()
+        user = {
+            "username": "john",
+            "email": "lennon@thebeatles.com",
+            "password": "johnpassword",
+            "confirm_password": "johnpassword",
+        }
+        response = client.register(user)
+        self.assertEqual(response.status_code, 200)
+        response = client.register(user)
+        self.assertEqual(response.status_code, 400)
+
+    def test_register_is_logged_in(self):
+        client = AuthClient()
+        user = {
+            "username": "john",
+            "email": "lennon@thebeatles.com",
+            "password": "johnpassword",
+            "confirm_password": "johnpassword",
+        }
+        self.assertRaises(EpicPongUser.DoesNotExist,
+                          EpicPongUser.objects.get,
+                          username="john")
+        response = client.register(user)
+        self.assertEqual(response.status_code, 200)
+        EpicPongUser.objects.get(username="john")
+
+        login_response = client.post(f"/authentication/login", {
+            "username": user["username"],
+            "password": user["password"],
+        })
+
+        response = client.call_restricted()
+        self.assertEqual(response.status_code, 200)
+
+
+
