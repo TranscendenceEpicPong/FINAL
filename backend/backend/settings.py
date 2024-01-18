@@ -53,7 +53,6 @@ INSTALLED_APPS = [
     'backend',
     'core',
     'tournament_app',
-    # 'users',
     'authentication',
 ]
 
