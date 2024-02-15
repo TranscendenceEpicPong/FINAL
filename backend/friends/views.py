@@ -7,18 +7,18 @@ from .service import FriendService
 import json
 import jwt
 from backend.settings import env
-from core.service import CoreService
+from core.helpers import get_response, get_cookie
 
 # Create your views here.
 @require_http_methods("GET")
 def index(request):
-    core_service = CoreService()
-    authorization = core_service.get_cookie(request, 'authorization')
+    authorization = get_cookie(request, 'authorization')
     owner_id = jwt.decode(authorization, env('JWT_SECRET'), algorithms=['HS256']).get('id')
+    print(owner_id)
     owner = User.objects.filter(id=owner_id).first()
 
     if owner is None:
-        return core_service.get_response({ "message": "Votre compte est invalide", "status": 403})
+        return get_response({ "message": "Votre compte est invalide", "status": 403})
 
     raw_friends = Friends.objects.filter(user=owner, status=Status.ACCEPTED.value).values()
     friends = []
@@ -34,12 +34,11 @@ def index(request):
 
 @require_http_methods("GET")
 def waiting(request):
-    core = CoreService()
     owner_id = jwt.decode(request.COOKIES.get('authorization'), env('JWT_SECRET'), algorithms=['HS256']).get('id')
 
     owner = User.objects.filter(id=owner_id).first()
     if owner is None:
-        return core.get_response({ "message": "Votre compte est invalide", "status": 403})
+        return get_response({ "message": "Votre compte est invalide", "status": 403})
 
     raw_friends = Friends.objects.filter(friend=owner, status=Status.WAITING.value).values()
     friends = []

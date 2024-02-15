@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html lang="fr">
+	<head>
+		<meta charset="UTF-8">
+		<meta name="viewport" content="width=device-width, initial-scale=1.0">
+		<title>Transcendance</title>
+		<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-T3c6CoIi6uLrA9TneNEoa7RxnatzjcDSCmG1MXxSR1GAsXEV/Dwwykc2MPK8M2HN" crossorigin="anonymous">
+		<style>
+			[data-bs-page] {
+				display: none;
+			}
+		</style>
+		<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js" integrity="sha384-C6RzsynM9kWDrMNeT87bh95OGNyZPhcTNXj1NW7RuBCsyN/o0jlpcV8Qyq46cDfL" crossorigin="anonymous"></script>
+		<script src="assets/js/cookies.js"></script>
+		<script src="assets/js/navigation.js"></script>
+		<script src="assets/js/socket.js"></script>
+		<script src="assets/js/input.js"></script>
+		<script src="assets/js/game.js"></script>
+		<script src="assets/js/index.js"></script>
+		<script src="assets/js/authentication.js"></script>
+		<script src="assets/js/blocks.js"></script>
+		<script src="assets/js/friends.js"></script>
+		<script src="assets/js/profile.js"></script>
+		<link rel="stylesheet" href="assets/css/game.css">
+	</head>
+	<body>
+		<nav class="navbar navbar-expand-lg bg-primary">
+			<div class="container-fluid color-light">
+				<a class="navbar-brand" href="/home">Accueil</a>
+				<button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+					<span class="navbar-toggler-icon"></span>
+				</button>
+				<div class="navbar-authenticated collapse navbar-collapse" id="navbarSupportedContent">
+					<ul class="navbar-nav me-auto mb-2 mb-lg-0">
+						<li class="nav-item">
+							<a class="nav-link" href="/games" data-bs-type="page">Parties</a>
+						</li>
+						<li class="nav-item">
+							<a class="nav-link" href="#">Tournois</a>
+						</li>
+						<li class="nav-item">
+							<a class="nav-link" href="/friends" data-bs-type="page">Amis</a>
+						</li>
+						<li class="nav-item">
+							<a class="nav-link" href="/blocks"data-bs-type="page">Blocages</a>
+						</li>
+						<li class="nav-item dropdown">
+							<span class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+								Mon compte
+							</span>
+							<ul class="dropdown-menu">
+								<li><a class="dropdown-item" href="/profile" data-bs-type="page">Profile</a></li>
+								<li><hr class="dropdown-divider"></li>
+								<li><a class="dropdown-item" href="/disconnect" data-bs-type="page" onclick="disconnect()">Se déconnecter</a></li>
+							</ul>
+						</li>
+					</ul>
+					<form class="d-flex" role="search">
+						<input class="form-control me-2" type="search" placeholder="Search" aria-label="Search" required>
+						<button class="btn btn-outline-success" type="submit">Search</button>
+					</form>
+				</div>
+			</div>
+		</nav>
+		<div class="container mb-3 mt-3">
+			<div id="authentication-page" data-bs-page="authentication" style="display: none;">
+				<div id="authentication-register" data-bs-page="authentication/register" style="display: none;">
+					<form id="form-register">
+						<div class="row">
+							<div class="col-6">
+								<label for="username" class="form-label">Nom d'utilisateur</label>
+								<input type="text" class="form-control" id="username" aria-describedby="emailHelp" required>
+							</div>
+							<div class="col-6">
+								<label for="avatar" class="form-label">Avatar</label>
+								<input type="text" class="form-control" id="avatar" required>
+							</div>
+						</div>
+						<div class="row">
+							<div class="col-6">
+								<label for="password" class="form-label">Mot de passe</label>
+								<input type="password" class="form-control" id="password" required>
+							</div>
+							<div class="col-6">
+								<label for="confirm_password" class="form-label">Confirmation</label>
+								<input type="password" class="form-control" id="confirm_password" required>
+							</div>
+						</div>
+						<button type="submit" class="btn btn-primary mt-3">S'inscrire</button>
+						<a href="/authentication/login" data-bs-type="page">Se connecter</a>
+					</form>
+				</div>
+				<div id="authentication-login" data-bs-page="authentication/login">
+					<form id="form-login">
+						<div class="mb-3">
+							<label for="username" class="form-label">Nom d'utilisateur</label>
+							<input type="text" class="form-control" id="username" aria-describedby="emailHelp" required>
+						</div>
+						<div class="mb-3">
+							<label for="password" class="form-label">Mot de passe</label>
+							<input type="password" class="form-control" id="password" required>
+						</div>
+						<div class="mb-3">
+							<label for="code" class="form-label">Code d'authentication (Optionnel)</label>
+							<input type="number" class="form-control" id="code" >
+						</div>
+						<button type="submit" class="btn btn-primary mt-3">Se connecter</button>
+						<a href="/authentication/register" data-bs-type="page">S'inscrire</a>
+					</form>
+				</div>
+			</div>
+			<div id="main">
+				<div id="home-page" data-bs-page="home">
+					<h1>Accueil</h1>
+				</div>
+				<div id="games-page" data-bs-page="games">
+					<h1 class="mb-3">Partie</h1>
+					<ul class="nav nav-tabs">
+						<li class="nav-item">
+							<a class="nav-link active" data-bs-type="page" href="/games/current">Actuelle</a>
+						</li>
+						<li class="nav-item">
+							<a class="nav-link" data-bs-type="page" href="/games/history">Historique</a>
+						</li>
+					</ul>
+					<div id="board" data-bs-page="games/current">
+						<table class="table col-5" id="table-players-score">
+							<thead>
+								<tr>
+									<th scope="col">Joueur</th>
+									<th scope="col">Score</th>
+								</tr>
+							</thead>
+							<tbody id="tbody-players-score">
+								<tr id="row-player-1">
+									<td id="username-player-1"></td>
+									<td id="score-player-1"></td>
+								</tr>
+								<tr id="row-player-2">
+									<td id="username-player-2"></td>
+									<td id="score-player-2"></td>
+								</tr>
+							</tbody>
+						</table>
+						<canvas id="canva-game" width="600" height="400"></canvas>
+						<button onclick="joinGame()" class="btn btn-primary">Trouver une partie</button>
+					</div>
+					<div id="games-history" data-bs-page="games/history">
+						<h3>Historique</h3>
+					</div>
+				</div>
+				<div id="profile-page" data-bs-page="profile">
+					<form id="form-edit-profile">
+						<div class="row">
+							<div class="col-6">
+								<label for="profile-username" class="form-label">Nom d'utilisateur</label>
+								<input type="text" class="form-control" id="profile-username" name="username" required>
+							</div>
+							<div class="col-6">
+								<label for="profile-avatar" class="form-label">Avatar</label>
+								<input type="text" class="form-control" id="profile-avatar" name="avatar" required>
+							</div>
+						</div>
+						<div class="row">
+							<div class="col-6">
+								<label for="profile-password" class="form-label">Mot de passe</label>
+								<input type="password" class="form-control" id="profile-password" name="password">
+							</div>
+							<div class="col-6">
+								<label for="profile-confirm_password" class="form-label">Confirmation</label>
+								<input type="password" class="form-control" id="profile-confirm_password" name="confirm_password">
+							</div>
+						</div>
+						<button type="submit" class="btn btn-primary mt-3">Mettre à jour</button>
+						<button type="button" class="btn btn-danger mt-3" onclick="deleteProfile()">Supprimer</button>
+					</form>
+					<!-- Button trigger modal -->
+					<button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#a2f-enabling" onclick="a2fRequestCode()">
+						Double authentication
+					</button>
+					
+					<!-- Modal -->
+					<div class="modal fade" id="a2f-enabling" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+						<div class="modal-dialog">
+							<div class="modal-content">
+								<div class="modal-header">
+									<h1 class="modal-title fs-5" id="exampleModalLabel">Activation de la double authentification</h1>
+									<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+								</div>
+								<div class="modal-body">
+									<form id="form-enabling-a2f">
+										<div>
+											<img src="" id="qrcode-2fa" alt="QRCode">
+											<div>
+												<label for="secret-2fa" class="form-label">Secret pour saisie manuelle</label>
+												<input type="text" class="form-control" id="secret-2fa" readonly>
+											</div>
+										</div>
+										<div class="col-12">
+											<label for="2fa-code" class="form-label">Code de vérification</label>
+											<input type="text" class="form-control" name="code" id="2fa-code" required>
+										</div>
+									</form>
+								</div>
+								<div class="modal-footer">
+									<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+									<button type="submit" form="form-enabling-a2f" class="btn btn-primary">Activer</button>
+								</div>
+							</div>
+						</div>
+					</div>
+				</div>
+				<div id="friends-page" data-bs-page="friends">
+					<form id="form-add-friend">
+						<div class="row mb-3">
+							<div class="col-6">
+								<input type="text" class="form-control" id="username" placeholder="Nom d'utilisateur" required>
+							</div>
+							<div class="col-1">
+								<button type="submit" class="btn btn-primary">Ajouter un ami</button>
+							</div>
+						</div>
+					</form>
+					<div class="row">
+						<table class="table col-5" id="table-friends-active">
+							<thead>
+								<tr>
+									<th scope="col">Nom d'utilisateur</th>
+									<th scope="col">Supprimer</th>
+									<th scope="col">Bloquer</th>
+								</tr>
+							</thead>
+							<tbody id="tbody-friends-active">
+	
+							</tbody>
+						</table>
+						<table class="table col-5" id="table-friends-waiting">
+							<thead>
+								<tr>
+									<th scope="col">Nom d'utilisateur</th>
+									<th scope="col">Accepter</th>
+									<th scope="col">Refuser</th>
+								</tr>
+							</thead>
+							<tbody id="tbody-friends-waiting">
+
+							</tbody>
+						</table>
+					</div>
+				</div>
+				<div id="blocks-page" data-bs-page="blocks">
+					<form id="form-add-block">
+						<div class="row mb-3">
+							<div class="col-6">
+								<input type="text" class="form-control" id="username" placeholder="Nom d'utilisateur" required>
+							</div>
+							<div class="col-1">
+								<button type="submit" class="btn btn-primary">Ajouter un blocage</button>
+							</div>
+						</div>
+					</form>
+					<div class="row">
+						<table class="table col-5" id="table-blocks-active">
+							<thead>
+								<tr>
+									<th scope="col">Nom d'utilisateur</th>
+									<th scope="col">Supprimer</th>
+								</tr>
+							</thead>
+							<tbody id="tbody-blocks-active">
+							</tbody>
+						</table>
+					</div>
+				</div>
+				<div id="disconnect-page" data-bs-page="disconnect">
+					<h1>DÉCONNEXION</h1>
+				</div>
+				<div id="not-found-page" data-bs-page="not-found">
+					<h1>PAGE INTROUVABLE</h1>
+				</div>
+			</div>
+		</div>
+		<script>
+			document.getElementById('main').style.display = 'none';
+			function loginComponent()
+			{
+				document.getElementById('authentication-register').style.display = 'none';
+				document.getElementById('authentication-login').style.display = 'block';
+			}
+			document.addEventListener('DOMContentLoaded', async () => {
+			})
+		</script>
+	</body>
+</html>

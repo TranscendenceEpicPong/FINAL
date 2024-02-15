@@ -56,6 +56,7 @@ ALLOWED_HOSTS = ["127.0.0.1", "0.0.0.0", "localhost", "10.0.0.34"]
 
 INSTALLED_APPS = [
     'friends',
+    'blocks',
     'daphne',
     'django.contrib.admin',
     'django.contrib.auth',
@@ -70,7 +71,6 @@ INSTALLED_APPS = [
 
     'backend',
     'core',
-    'tournament_app',
     'authentication',
 ]
 
@@ -167,7 +167,7 @@ STATIC_URL = 'static/'
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 SESSION_ENGINE = "django.contrib.sessions.backends.db"
-SESSION_COOKIE_AGE = 3600
+SESSION_COOKIE_AGE = 3600000
 
 AUTH_USER_MODEL = 'core.EpicPongUser'
 

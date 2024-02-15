@@ -1,5 +1,6 @@
 from .status import Status, StatusAdding, StatusRemoving
 from .models import Friends
+from blocks.models import Blocks
 
 class FriendService:
     def __init__(self, owner):
@@ -81,6 +82,12 @@ class FriendService:
     def add_friend(self, user):
         if user.id == self.__owner.id:
             return StatusAdding.ADDING_YOURSELF.value
+
+        if Blocks.objects.filter(user=self.__owner, block=user).exists():
+            return StatusAdding.BLOCKED_USER.value
+    
+        if Blocks.objects.filter(user=user, block=self.__owner).exists():
+            return StatusAdding.ADDING_BLOCKED.value
 
         if self.__has_already_request(user):
             return StatusAdding.ALREADY_REQUEST.value

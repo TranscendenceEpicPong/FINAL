@@ -3,22 +3,19 @@ from channels.generic.websocket import WebsocketConsumer
 from asgiref.sync import async_to_sync
 import jwt
 from backend.settings import env
-from friends.service import FriendService
+from blocks.service import BlockService
 from core.models import EpicPongUser
-from django.contrib.sessions.models import Session
-from django.middleware import common
-import json
 
-prefix = "friends"
+prefix = "blocks"
 
 def decode_query_string(query_string):
     try:
         infos_json = jwt.decode(query_string, env('JWT_SECRET'), algorithms=['HS256'])
         return infos_json
-    except Exception:
+    except jwt.ExpiredSignatureError:
         return None
 
-class FriendConsumer(WebsocketConsumer):
+class BlockConsumer(WebsocketConsumer):
     def connect(self):
         infos_json = decode_query_string(self.scope['query_string'])
         if infos_json is None:
@@ -33,13 +30,8 @@ class FriendConsumer(WebsocketConsumer):
 
     def receive(self, text_data):
         infos_json = decode_query_string(self.scope['query_string'])
-        if infos_json is None:
-            self.close()
-            return
-
         owner = EpicPongUser.objects.get(id=infos_json['id'])
-        service = FriendService(owner)
-        name = infos_json['username']
+        service = BlockService(owner)
         try:
             text_data_json = json.loads(text_data)
         except Exception:
@@ -57,10 +49,10 @@ class FriendConsumer(WebsocketConsumer):
             }))
             return
 
-        if text_data_json['action'] in ['add', 'accept']:
-            status = service.add_friend(user)
+        if text_data_json['action'] == 'add':
+            status = service.add_block(user)
         elif text_data_json['action'] == 'delete':
-            status = service.delete_friend(user)
+            status = service.delete_block(user)
         else:
             self.send(text_data=json.dumps({
                 'type':'error',
@@ -68,22 +60,21 @@ class FriendConsumer(WebsocketConsumer):
             }))
             return
 
+        name = infos_json['username']
         if status['status'] < 200 or status['status'] >= 300:
             self.send(text_data=json.dumps({
                 'type':'error',
-                'message':status['message'],
-                "sender": name,
-                "receiver": text_data_json['username']
+                'message':status['message']
             }))
             return
 
         data_to_send = {
-            'type':'add_friend',
+            'type':'block_message',
             'message': status['message'],
             "status": status['status'],
             "sender": name,
             "receiver": text_data_json['username'],
-            "action": text_data_json['action']
+            'action': text_data_json['action']
         }
 
         async_to_sync(self.channel_layer.group_send)(
@@ -96,7 +87,8 @@ class FriendConsumer(WebsocketConsumer):
             data_to_send
         )
 
-    def add_friend(self, event):
+    def block_message(self, event):
+        event['type'] = 'block'
         self.send(text_data=json.dumps(event))
 
     def disconnect(self, code):
