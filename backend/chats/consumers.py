@@ -33,8 +33,7 @@ class ChatConsumer(WebsocketConsumer):
 
     def receive(self, text_data):
         infos_json = decode_query_string(self.scope['query_string'])
-        owner = EpicPongUser.objects.get(id=infos_json['id'])
-        friends = FriendService(owner)
+        friends = FriendService(infos_json['id'])
         try:
             text_data_json = json.loads(text_data)
         except Exception:
@@ -64,17 +63,7 @@ class ChatConsumer(WebsocketConsumer):
                 'message':'Utilisateur introuvable'
             }))
             return
-
-        if owner.id == user.id:
-            self.send(text_data=json.dumps({
-                'type':'error',
-                'sender': name,
-                'receiver': text_data_json.get('username'),
-                'message':"Vous ne pouvez pas vous envoyer de message à vous même"
-            }))
-            return
-
-        if not friends.is_friend(user.id):
+        if not friends.is_friend(user.pk):
             self.send(text_data=json.dumps({
                 'type':'error',
                 'sender': name,
