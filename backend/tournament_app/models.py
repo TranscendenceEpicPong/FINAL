@@ -153,12 +153,12 @@ class Tournament(models.Model):
         random.shuffle(participants_list_2free)
         participants_list_1free = []
         i = 0
-        while participants_list_2free or participants_list_1free:
-            if participants_list_2free:
+        while len(participants_list_2free) > 0 or len(participants_list_1free) > 0:
+            if len(participants_list_2free) > 0:
                 player1 = random.choice(participants_list_2free)
                 participants_list_2free.remove(player1)
 
-                if participants_list_2free:
+                if len(participants_list_2free) > 0:
                     opponent1 = random.choice(participants_list_2free)
                     participants_list_2free.remove(opponent1)
                     participants_list_1free.append(opponent1)
@@ -166,7 +166,7 @@ class Tournament(models.Model):
                     opponent1 = random.choice(participants_list_1free)
                     participants_list_1free.remove(opponent1)
 
-                if participants_list_2free:
+                if len(participants_list_2free) > 0:
                     opponent2 = random.choice(participants_list_2free)
                     participants_list_2free.remove(opponent2)
                     participants_list_1free.append(opponent2)
