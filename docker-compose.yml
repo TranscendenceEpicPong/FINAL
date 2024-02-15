@@ -74,3 +74,8 @@ networks:
 
 volumes:
   db-data:
+    driver: local
+    driver_opts:
+      device: ./db-datas
+      type: volume
+      o: bind

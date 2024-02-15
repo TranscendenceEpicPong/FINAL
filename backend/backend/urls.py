@@ -27,4 +27,5 @@ urlpatterns = [
     path('server_info/', core.views.server_info, name='server-info'),
     path("friends/", include("friends.urls")),
     path("blocks/", include("blocks.urls")),
+    path("chats/", include("chats.urls")),
 ]

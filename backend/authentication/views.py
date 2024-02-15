@@ -67,7 +67,6 @@ def register(request):
     except json.JSONDecodeError:
         return JsonResponse("Invalid JSON", safe=False, status=400)
     form = UserRegisterForm(raw_data)
-
     if not form.is_valid():
         return JsonResponse(form.errors, status=400)
 
