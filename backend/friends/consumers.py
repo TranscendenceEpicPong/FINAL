@@ -81,8 +81,14 @@ class FriendConsumer(WebsocketConsumer):
             'type':'add_friend',
             'message': status['message'],
             "status": status['status'],
-            "sender": name,
-            "receiver": text_data_json['username'],
+            "sender": {
+                "username": owner.username,
+                "avatar": owner.avatar,
+            },
+            "receiver": {
+                "username": user.username,
+                "avatar": user.avatar,
+            },
             "action": text_data_json['action']
         }
 

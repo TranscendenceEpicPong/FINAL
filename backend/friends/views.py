@@ -26,8 +26,14 @@ def index(request):
         user = User.objects.get(id=raw_friend.get("friend_id"))
         friends.append({
             'id': user.id,
-            'avatar': user.avatar,
-            'username': user.username,
+            "sender": {
+                "username": owner.username,
+                "avatar": owner.avatar,
+            },
+            "receiver": {
+                "username": user.username,
+                "avatar": user.avatar,
+            },
         })
 
     return JsonResponse(friends, safe=False, status=200)
@@ -46,7 +52,14 @@ def waiting(request):
         user = User.objects.get(id=raw_friend.get("user_id"))
         friends.append({
             'id': user.id,
-            'username': user.username,
+            "sender": {
+                "username": owner.username,
+                "avatar": owner.avatar,
+            },
+            "receiver": {
+                "username": user.username,
+                "avatar": user.avatar,
+            },
         })
 
     return JsonResponse(friends, safe=False, status=200)
@@ -64,8 +77,14 @@ def pending(request):
         user = User.objects.get(id=raw_friend.get("friend_id"))
         friends.append({
             'id': user.id,
-            'sender': owner.username,
-            'username': user.username,
+            "sender": {
+                "username": owner.username,
+                "avatar": owner.avatar,
+            },
+            "receiver": {
+                "username": user.username,
+                "avatar": user.avatar,
+            },
         })
 
     return JsonResponse(friends, safe=False, status=200)
