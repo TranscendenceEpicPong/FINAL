@@ -21,8 +21,14 @@ def index(request):
         user = User.objects.get(id=raw_block.get("block_id"))
         blocks.append({
             'id': user.id,
-            'sender': owner.username,
-            'receiver': user.username,
+            'sender': {
+                "username": owner.username,
+                "avatar": owner.avatar,
+            },
+            'receiver': {
+                "username": user.username,
+                "avatar": user.avatar,
+            },
         })
 
     return JsonResponse(blocks, safe=False, status=200)
