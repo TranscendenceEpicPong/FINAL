@@ -7,6 +7,18 @@ from friends.models import Friends
 from core.helpers import get_response
 
 # Create your views here.
+def index(request):
+    user = get_user(request)
+    chats = Chats.objects.filter(Q(receiver=user.pk) | Q(sender=user.pk))
+    messages = []
+    for chat in chats:
+        messages.append({
+            "sender": chat.sender.username,
+            "receiver": chat.receiver.username,
+            "content": chat.content
+        })
+
+    return JsonResponse(messages, safe=False, status=200)
 
 def user(request, username):
     user = get_user(request)
@@ -22,4 +34,12 @@ def user(request, username):
         return get_response({'message': 'Vous n\'êtes pas amis', "status": 403})
 
     chats = Chats.objects.filter(Q(receiver=user.pk, sender=other.id) | Q(sender=user.pk, receiver=other.id))
-    return JsonResponse({'chats': list(chats.values())})
+    messages = []
+    for chat in chats:
+        messages.append({
+            "sender": chat.sender.username,
+            "receiver": chat.receiver.username,
+            "content": chat.content
+        })
+
+    return JsonResponse(messages, safe=False, status=200)
