@@ -10,5 +10,5 @@ def server_info(request):
         "version": 1,
         "available": True,
     })
-    response.set_cookie('csrf_token', get_token(request))
+    get_token(request)
     return response
