@@ -23,6 +23,7 @@ env = environ.Env(
     DB_HOST=(str, '127.0.0.1'),
     DB_PORT=(str, '5432'),
     MYPY_DJANGO_CONFIG=(str, './mypy.ini'),
+    CORS_ALLOWED_ORIGINS=(list, ["http://localhost:8080", "http://localhost"]),
     JWT_SECRET=(str, 'SECRET'),
     CORS_ALLOWED_ORIGINS=(list, ["http://localhost:8080"]),
     APP_NAME=(str, 'EpicPong'),
@@ -56,6 +57,7 @@ ALLOWED_HOSTS = ["127.0.0.1", "0.0.0.0", "localhost", "10.0.0.34"]
 
 INSTALLED_APPS = [
     'daphne',
+    'game',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',

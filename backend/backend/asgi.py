@@ -14,6 +14,7 @@ from channels.routing import ProtocolTypeRouter, URLRouter
 from friends import routing as friend_routing
 from blocks import routing as block_routing
 from chats import routing as chat_routing
+from game import routing as game_routing
 
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'backend.settings')
 
@@ -26,5 +27,6 @@ application = ProtocolTypeRouter({
             *friend_routing.websocket_urlpatterns,
             *block_routing.websocket_urlpatterns,
             *chat_routing.websocket_urlpatterns
+            *game_routing.websocket_urlpatterns,
         ])
 })
