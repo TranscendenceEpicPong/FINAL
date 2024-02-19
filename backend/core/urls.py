@@ -15,27 +15,4 @@ Including another URLconf
     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
 
-from django.contrib import admin
-from django.urls import path, include
-from rest_framework import routers
-
-import core.views
-
-router = routers.DefaultRouter()
-# router.register(r'users', views.UserViewSet)
-# router.register(r'tournaments', views.TournamentViewSet)
-# router.register(r'tournaments/(?P<tournament_id>\d+)/ranking', views.TournamentRankingViewSet, basename='tournament-ranking')
-# router.register(r'tournaments/(?P<tournament_id>\d+)/matches', views.TournamentMatchViewSet, basename='tournament-match')
-# router.register(r'tournaments/(?P<tournament_id>\d+)/participants', views.TournamentParticipantsViewSet, basename='tournament-participants')
-
-
-# router.register(r'tournaments/create/', views.TournamentCreateViewSet, basename='tournament-create')
-# router.register(r'tournaments/join/', views.JoinTournamentViewSet.as_view({'post', 'update'}), basename='tournament-join')
-# router.register(r'tournaments/(?P<tournament_id>\d+)/start/', views.StartTournamentViewSet, basename='start-tournament')
-
-
-urlpatterns = [
-    path('', core.views.template, name='template'),
-    path('authentication/register', core.views.register, name='register'),
-    path('friends', core.views.friends, name='friends'),
-]
+urlpatterns = []
