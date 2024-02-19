@@ -35,7 +35,7 @@ class Command(BaseCommand):
             self.stdout.write(self.style.ERROR(f'Invalid phase: {phase}.'))
             return
 
-        matches = Match.objects.filter(tournament=tournament, round_name=phase)
+        matches = Match.objects.filter(tournament=tournament, phase=phase)
 
         if not matches:
             self.stdout.write(self.style.ERROR(f'No matches found for phase "{phase}" in tournament "{tournament_name}".'))
