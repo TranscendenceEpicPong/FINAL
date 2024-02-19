@@ -4,27 +4,45 @@ from django.core.exceptions import ObjectDoesNotExist
 from django.db.models import Q
 
 from core.models import EpicPongUser
-
+import sys
+from core.config import UserConfig
 
 class UserRegisterForm(forms.ModelForm):
-    confirm_password = forms.CharField(widget=forms.PasswordInput())
+    username = forms.CharField(
+        label=UserConfig.USERNAME.value['label'],
+        max_length=UserConfig.USERNAME.value['max_length'],
+        min_length=UserConfig.USERNAME.value['min_length'],
+        required=True,
+        error_messages=UserConfig.USERNAME.value['error_messages']
+    )
+    avatar = forms.CharField(
+        label=UserConfig.AVATAR.value['label'],
+        max_length=UserConfig.AVATAR.value['max_length'],
+        min_length=UserConfig.AVATAR.value['min_length'],
+        required=True,
+        error_messages=UserConfig.AVATAR.value['error_messages']
+    )
+    password = forms.CharField(
+        label=UserConfig.PASSWORD.value['label'],
+        max_length=UserConfig.PASSWORD.value['max_length'],
+        min_length=UserConfig.PASSWORD.value['min_length'],
+        required=True,
+        error_messages=UserConfig.PASSWORD.value['error_messages']
+    )
+    confirm_password = forms.CharField(
+        label=UserConfig.CONFIRM_PASSWORD.value['label'],
+        max_length=UserConfig.CONFIRM_PASSWORD.value['max_length'],
+        min_length=UserConfig.CONFIRM_PASSWORD.value['min_length'],
+        required=True,
+        error_messages=UserConfig.CONFIRM_PASSWORD.value['error_messages']
+    )
 
     class Meta:
         model = EpicPongUser
-        fields = ['username', 'email', 'password']
+        fields = ['username', 'avatar', 'email', 'password']
 
     def clean(self):
         cleaned_data = super().clean()
-
-        try:
-            get_user_model().objects.get(Q(
-                email=cleaned_data.get('email')
-            ) | Q(
-                username=cleaned_data.get('username')
-            ))
-            raise forms.ValidationError('Email or username already in use')
-        except ObjectDoesNotExist:
-            pass
 
         password = cleaned_data.get("password")
         confirm_password = cleaned_data.get("confirm_password")

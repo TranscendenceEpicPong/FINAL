@@ -2,84 +2,158 @@ from collections.abc import Iterable
 
 from django.contrib.auth import get_user_model
 from django.db import models
-from django.contrib.auth.models import User
 import random
 from itertools import zip_longest
+import logging  # error
 
-from django.conf import settings
+from django.db.models import QuerySet
 
-# Create your models here.
+MIN_PARTICIPANTS = 3
+MAX_PARTICIPANTS = 20
+
+PHASE_LIMITS = [
+    ('no', MAX_PARTICIPANTS),
+    ('pool', MAX_PARTICIPANTS),
+    ('eighth', 16),
+    ('quarter', 8),
+    ('semi', 4),
+    ('final', 2),
+]
+
 
 class Tournament(models.Model):
+    class Phases(models.TextChoices):
+        NOT_STARTED = 'no'
+        POOL_PHASE = 'pool'
+        EIGHT_PHASE = 'eight'
+        QUARTER_PHASE = 'quarter'
+        SEMI_PHASE = 'semi'
+        FINAL_PHASE = 'final'
+
     name = models.CharField(max_length=50)
-    creator_alias = models.ForeignKey(get_user_model(), on_delete=models.CASCADE, related_name='created_tournament')
-    participants: 'models.ManyToManyField' = models.ManyToManyField(get_user_model(), through='RegistrationTournament')
     is_open = models.BooleanField(default=True)
     max_participants = models.PositiveIntegerField(default=20)
-    ranking: 'models.ManyToManyField' = models.ManyToManyField('RegistrationTournament',
-                                                               through='TournamentRanking',
-                                                               related_name='tournament_ranking')
-
-    PHASE_CHOICES = [
-        ('no', 'not begin'),
-        ('pool', 'Pool Phase'),
-        ('eighth', 'Eighth Phase'),
-        ('quarter', 'Quarter Phase'),
-        ('semi', 'Semi Phase'),
-        ('final', 'Final Phase'),
-    ]
-
-    phase = models.CharField(max_length=10, choices=PHASE_CHOICES, default='no')
+    phase = models.CharField(choices=Phases,
+                             default=Phases.NOT_STARTED)
 
     def __str__(self):
-        return f"{self.name} (Creator: {self.creator_alias})"
-        
+        return f"{self.name} (Creator: {self.creator.alias})"
+
+    @property
+    def creator(self):
+        return self.participants.filter(is_creator=True).first() \
+            or self.participants.first()
+
+    @property
     def is_full(self):
-        return self.participants.count() == self.max_participants
-        
+        return self.participants.count() >= self.max_participants
+
+    @property
+    def ranking(self) -> 'QuerySet[RegistrationTournament]':
+        return self.participants.filter(is_active=True).order_by(
+            '-points',
+            '-goal_average',
+            'goal_conceded',
+        )
+
+    @property
+    def phase_index(self):
+        phases_list = [
+            phase[0] for phase in self.Phases.choices
+        ]
+        return phases_list.index(self.phase)
+
+    @property
+    def active_participants(self):
+        return self.participants.filter(is_active=True)
+
+    @property
+    def active_count(self):
+        return self.active_participants.count()
+
+    @property
+    def current_matches(self):
+        return self.matches.filter(phase=self.phase)
+
+    def get_next_phase(self):
+        # print("Get next phase")
+
+        if self.phase == self.Phases.NOT_STARTED:
+            return self.Phases.POOL_PHASE
+
+        if self.phase == self.Phases.FINAL_PHASE:
+            return None
+
+        if self.phase == self.Phases.POOL_PHASE and self.active_count < MAX_PARTICIPANTS:
+            phase_index = self.phase_index
+            while self.active_count < PHASE_LIMITS[phase_index][1]:
+                phase_index += 1
+        else:
+            phase_index = self.phase_index + 1
+
+        value = self.Phases.choices[phase_index][0]
+        return self.Phases(value)
+
     def start_next_phase(self):
-        if self.participants.count() >= 3 and self.participants.count() <= 20:
-            # error : invalid number of participants
-            return 
-        # pool
-        if self.phase == 'no':
-            if self.participants.count() >= 16:
-                self.phase = 'eighth',
-            elif self.participants.count() >= 8:
-                self.phase = 'quarter'
-            elif self.participants.count() >= 4:
-                self.phase = 'semi'
-            elif self.participants.count() >= 2:
-                self.phase = 'final'
-            self.is_open = False
-            self.save()
-            self.organize_pool_matches()
-        # eighth
-        elif self.phase == 'eighth':
-            self.phase = 'quarter'
-            self.save()
-            self.organize_eighth_matches()
-        # quarter
-        elif self.phase == 'quarter':
-            self.phase = 'semi'
-            self.save()
-            self.organize_quarter_matches()
-        # semi
-        elif self.phase == 'semi':
-            self.phase = 'final'
-            self.save()
-            self.organize_semi_matches()
-        # final
-        elif self.phase == 'final':
-            self.save()
-            self.organize_final_match()
+        # Check amount of participants
+        if MIN_PARTICIPANTS > self.participants.count() > MAX_PARTICIPANTS:
+            logging.error(f'Tournament "{self.name}" invalid number of participants.')
+            raise Exception("Number of participants out of range")
+
+        next_phase = self.get_next_phase()
+        if next_phase is None:
+            raise Exception("No more phases")
+
+        # print(f"Next phase: {next_phase}")
+
+        self.phase = next_phase
+        self.save()
+
+        if self.phase not in [self.Phases.NOT_STARTED, self.Phases.POOL_PHASE]:
+            self.eliminate_participants()
+
+        if self.phase != self.Phases.NOT_STARTED:
+            self.organize_next_matches()
+
+    def get_ranking_dict(self):
+        return [{
+            'user': participant.user,
+            'alias': participant.alias,
+            'points': participant.points,
+            'goal_average': participant.goal_average,
+            'goal_conceded': participant.goal_conceded
+        } for participant in self.ranking]
+
+    def eliminate_participants(self):
+        limit = PHASE_LIMITS[self.phase_index][1]
+        ids_to_eliminate = self.ranking[limit:].values_list('id', flat=True)
+        # print(f"Eliminating {ids_to_eliminate.count()} participants")
+        self.ranking.filter(id__in=ids_to_eliminate).update(is_active=False)
+        # print(f"Remaining {self.active_count} participants")
+
+    def organize_next_matches(self):
+        if self.phase == self.Phases.POOL_PHASE:
+            return self.organize_pool_matches()
+
+        participants = self.active_participants
+        half = self.active_count / 2
+        pairs = list(zip_longest(
+            participants[:half], reversed(participants[half:])
+        ))
+        for i, pair in enumerate(pairs, start=1):
+            match = Match.objects.create(
+                tournament=self,
+                player1=pair[0].user,
+                player2=pair[1].user,
+                phase=self.phase,
+            )
 
     def organize_pool_matches(self):
         participants_list_2free = list(self.participants.all())
         random.shuffle(participants_list_2free)
         participants_list_1free = []
         i = 0
-        while participants_list_2free or participants_list_1free :
+        while participants_list_2free or participants_list_1free:
             if participants_list_2free:
                 player1 = random.choice(participants_list_2free)
                 participants_list_2free.remove(player1)
@@ -102,15 +176,15 @@ class Tournament(models.Model):
 
                 match1 = Match.objects.create(
                     tournament=self,
-                    player1=player1,
-                    player2=opponent1,
-                    round_name='Pool Match',
+                    player1=player1.user,
+                    player2=opponent1.user,
+                    phase=self.Phases.POOL_PHASE,
                 )
                 match2 = Match.objects.create(
                     tournament=self,
-                    player1=player1,
-                    player2=opponent2,
-                    round_name='Pool Match',
+                    player1=player1.user,
+                    player2=opponent2.user,
+                    phase=self.Phases.POOL_PHASE,
                 )
             else:
                 player1 = random.choice(participants_list_1free)
@@ -121,126 +195,89 @@ class Tournament(models.Model):
 
                 match = Match.objects.create(
                     tournament=self,
-                    player1=player1,
-                    player2=opponent1,
-                    round_name='Pool Match',
+                    player1=player1.user,
+                    player2=opponent1.user,
+                    phase=self.Phases.POOL_PHASE,
                 )
 
-    def organize_eighth_matches(self):
-        participants = TournamentRanking.objects.filter(tournament=self).order_by('rank')[:16]
-        pairs = list(zip_longest(participants[:8], reversed(participants[8:])))
+    def get_registered_player(self, user):
+        return self.participants.get(user=user)
 
-        for i, pair in enumerate(pairs, start=1):
-            match = Match.objects.create(
-                tournament=self,
-                player1=pair[0].registration.user,
-                player2=pair[1].registration.user,
-                round_name='Eighth Match',
-            )
-        self.save()
+    def update_tournament_results(self):
+        for match in self.current_matches:
+            winner_user = match.get_winner()
+            loser_user = match.get_loser()
 
-    def organize_quarter_matches(self):
-        if not self.phase_eighth:
-            participants = TournamentRanking.objects.filter(tournament=self).order_by('rank')[:8]
-        else:
-            winners_eighth = [match.get_winner() for match in Match.objects.filter(tournament=self, round_name='Eighth Match')]
-            participants = TournamentRanking.objects.filter(registration__user__in=winners_eighth).order_by('rank')
+            winner = self.participants.get(user=winner_user)
+            winner.points += 3
+            loser = self.participants.get(user=loser_user)
 
-        pairs = list(zip_longest(participants[:4], reversed(participants[4:])))
+            #####################################################
+            #                                                   #
+            #  goal_average = goal scored - goal conceded       #
+            #                                                   #
+            #  e.g. :         player1 vs player2                #
+            #                       3-2                         #
+            #  player1 : goal_average = 1 ; goal_conceded = 2   #
+            #  player2 : goal_average = -1 ; goal_conceded = 3  #
+            #                                                   #
+            #####################################################
 
-        for i, pair in enumerate(pairs, start=1):
-            match = Match.objects.create(
-                tournament=self,
-                player1=pair[0].registration.user,
-                player2=pair[1].registration.user,
-                round_name='Quarter Match',
-            )
-        self.save()
+            winner.goal_average += match.get_winner_score() - match.get_loser_score()
+            winner.goal_conceded += match.get_loser_score()
+            loser.goal_average += match.get_loser_score() - match.get_winner_score()
+            loser.goal_conceded += match.get_winner_score()
 
-    def organize_semi_matches(self):
-        if not self.phase_quarter:
-            participants = TournamentRanking.objects.filter(tournament=self).order_by('rank')[:4]
-        else:
-            winners_quarter = [match.get_winner() for match in Match.objects.filter(tournament=self, round_name='Quarter Match')]
-            participants = TournamentRanking.objects.filter(registration__user__in=winners_quarter).order_by('rank')
-
-        pairs = list(zip_longest(participants[:2], reversed(participants[2:])))
-        
-        for i, pair in enumerate(pairs, start=1):
-            match = Match.objects.create(
-                tournament=self,
-                player1=pair[0].registration.user,
-                player2=pair[1].registration.user,
-                round_name='Semi Match',
-            )
-        self.save()
-
-    def organize_final_match(self):
-        if not self.phase_semi:
-            participants = TournamentRanking.objects.filter(tournament=self).order_by('rank')[:2]
-        else:
-            participants = [match.get_winner() for match in Match.objects.filter(tournament=self, round_name='Semi Match')]
-
-        finalists = RegistrationTournament.objects.filter(user__in=participants)
-
-        final_match = Match.objects.create(
-            tournament=self,
-            player1=finalists[0].user,
-            player2=finalists[1].user,
-            round_name='Final Match',
-        )
-        self.save()
-
-    def calculate_ranking(self):
-        participants = RegistrationTournament.objects.filter(tournament=self).order_by('-points', '-goal_average', 'goal_conceded', '?')
-        return participants
-        
-    def get_ranking(self):
-        return TournamentRanking.objects.filter(tournament=self).order_by('rank')
+            winner.save()
+            loser.save()
 
 
 class Match(models.Model):
-    tournament = models.ForeignKey(Tournament, on_delete=models.CASCADE)
+    tournament = models.ForeignKey(Tournament, on_delete=models.CASCADE, related_name='matches')
     player1 = models.ForeignKey(get_user_model(), on_delete=models.CASCADE, related_name='player1_matches')
     player2 = models.ForeignKey(get_user_model(), on_delete=models.CASCADE, related_name='player2_matches')
-    round_name = models.CharField(max_length=50)
+    phase = models.CharField(choices=Tournament.Phases)
     score_player1 = models.PositiveIntegerField(default=0)
     score_player2 = models.PositiveIntegerField(default=0)
 
+    MATCH_STATE_CHOICES = [
+        ('not_started', 'Not Started'),
+        ('in_progress', 'In Progress'),
+        ('finished', 'Finished'),
+    ]
+
+    state = models.CharField(max_length=20, choices=MATCH_STATE_CHOICES, default='not_started')
+    ready_player1 = models.BooleanField(default=False)
+    ready_player2 = models.BooleanField(default=False)
+
     def get_winner(self):
-        if self.score_player1 > self.score_player2:
-            return self.player1
-        else:
-            return self.player2
-        
+        return self.player1 \
+            if self.score_player2 < self.score_player1 \
+            else self.player2
+
+    def get_winner_score(self):
+        return max([self.score_player1, self.score_player2])
+
     def get_loser(self):
-        if self.score_player2 > self.score_player1:
-            return self.player1
-        else:
-            return self.player2
+        return self.player1 \
+            if self.score_player2 > self.score_player1 \
+            else self.player2
+
+    def get_loser_score(self):
+        return min([self.score_player1, self.score_player2])
 
 
 class RegistrationTournament(models.Model):
     user = models.ForeignKey(get_user_model(), on_delete=models.CASCADE)
-    tournament = models.ForeignKey(Tournament, on_delete=models.CASCADE)
+    tournament = models.ForeignKey(Tournament,
+                                   on_delete=models.CASCADE,
+                                   related_name='participants')
     alias = models.CharField(max_length=50)
+    is_creator = models.BooleanField(default=False)
+    is_active = models.BooleanField(default=True)
     points = models.PositiveIntegerField(default=0)
     goal_average = models.IntegerField(default=0)
     goal_conceded = models.PositiveBigIntegerField(default=0)
 
     class Meta:
         unique_together = ('tournament', 'alias')
-
-
-class TournamentRanking(models.Model):
-    tournament = models.ForeignKey(Tournament, on_delete=models.CASCADE)
-    registration = models.ForeignKey(RegistrationTournament, on_delete=models.CASCADE)
-    rank = models.PositiveIntegerField()
-
-    class Meta:
-        ordering = ['rank']
-
-    def update_ranking(self):
-        participants = RegistrationTournament.objects.filter(tournament=self.tournament).order_by('-points', '-goal_average', 'goal_conceded', '?')
-        for i, participant in enumerate(participants, start=1):
-            TournamentRanking.objects.update_or_create(tournament=self.tournament, registration=participant, defaults={'rank': i})

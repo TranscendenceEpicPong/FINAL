@@ -14,6 +14,8 @@ from pathlib import Path
 import environ
 import os
 
+from corsheaders.defaults import default_headers
+
 env = environ.Env(
     DB_NAME=(str, 'transcendence'),
     DB_USER=(str, 'postgres'),
@@ -22,9 +24,18 @@ env = environ.Env(
     DB_PORT=(str, '5432'),
     MYPY_DJANGO_CONFIG=(str, './mypy.ini'),
     JWT_SECRET=(str, 'SECRET'),
+    CORS_ALLOWED_ORIGINS=(list, ["http://localhost:8080"]),
+    APP_NAME=(str, 'EpicPong'),
 )
 
-UNAUTHENTICATED_REQUESTS = ['/authentication/login', '/authentication/register']
+CORS_ALLOWED_ORIGINS = env('CORS_ALLOWED_ORIGINS')
+CORS_ALLOW_HEADERS = [*default_headers, 'X-CSRFToken']
+CORS_ALLOW_CREDENTIALS = True
+
+UNAUTHENTICATED_REQUESTS = ['/authentication/login', '/authentication/register', '/server_info/']
+
+CSRF_TRUSTED_ORIGINS = ["http://localhost:8080", "http://localhost:8000"]
+CSRF_COOKIE_DOMAIN = "localhost"
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -39,7 +50,7 @@ SECRET_KEY = 'django-insecure-otc*6$yc^vbe&m1uzzt!0jt^l=4r4=q&3#voh5een44bu4v)u#
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ["127.0.0.1", "0.0.0.0", "localhost"]
+ALLOWED_HOSTS = ["127.0.0.1", "0.0.0.0", "localhost", "10.0.0.34"]
 
 # Application definition
 
@@ -50,6 +61,11 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+
+    'django_extensions',
+    'rest_framework',
+    'corsheaders',
+
     'backend',
     'core',
     'tournament_app',
@@ -59,7 +75,9 @@ INSTALLED_APPS = [
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
+    'corsheaders.middleware.CorsMiddleware',
     'django.middleware.common.CommonMiddleware',
+    'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'authentication.middleware.CustomAuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',

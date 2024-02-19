@@ -4,14 +4,23 @@ verify_ssl = true
 name = "pypi"
 
 [packages]
-django = "<4.3"
+django = "5"
 psycopg2-binary = "<3"
 django-environ = "*"
 pyjwt = "*"
+djangorestframework = "*"
+django-cors-headers = "*"
+daphne = "*"
+six = "*"
+channels = "*"
+pyotp = "*"
+qrcode = "*"
+django-extensions = "*"
 
 [dev-packages]
 mypy = "*"
-django-stubs = {extras = ["compatible-mypy"], version = "*"}
+django-stubs = {extras = [ "compatible-mypy",], version = "*"}
+djangorestframework-stubs = {extras = [ "compatible-mypy",]}
 
 [requires]
 python_version = "3.12"

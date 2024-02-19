@@ -1,3 +1,4 @@
+import json
 import random
 import string
 
@@ -67,7 +68,7 @@ class AuthClient(Client):
         return self.post('/add', {"text": text})
 
     def register(self, data):
-        return self.post('/authentication/register', data)
+        return self.post('/authentication/register', json.dumps(data), content_type='application/json')
 
 
 @override_settings(ROOT_URLCONF=__name__)
@@ -104,34 +105,34 @@ class AuthenticationTestCase(TestCase):
     })
     def test_login_endpoint_should_not_be_static(self):
         client = AuthClient()
-        auth_response = client.post(f"/{random_path}", {
+        auth_response = client.post(f"/{random_path}", json.dumps({
             "username": self.creds["username"],
             "password": self.creds["password"],
-        })
+        }), content_type='application/json')
         self.assertEqual(auth_response.status_code, 200)
 
     def test_validate_post_data(self):
         client = AuthClient()
-        auth_response = client.post(f"/authentication/login", {
+        auth_response = client.post(f"/authentication/login", json.dumps({
             "not-a-username": self.creds["email"],
             "password": self.creds["password"],
-        })
+        }), content_type='application/json')
         self.assertEqual(auth_response.status_code, 400)
 
     def test_login_wrong_username(self):
         client = AuthClient()
-        auth_response = client.post(f"/authentication/login", {
+        auth_response = client.post(f"/authentication/login", json.dumps({
             "username": "wrong",
             "password": self.creds["password"],
-        })
+        }), content_type='application/json')
         self.assertEqual(auth_response.status_code, 401)
 
     def test_login_wrong_password(self):
         client = AuthClient()
-        auth_response = client.post(f"/authentication/login", {
+        auth_response = client.post(f"/authentication/login", json.dumps({
             "username": self.creds["username"],
             "password": "wrong",
-        })
+        }), content_type='application/json')
         self.assertEqual(auth_response.status_code, 401)
 
     def call_and_assert_unauthenticated(self):
@@ -201,10 +202,10 @@ class CustomAuthenticationTestCase(TestCase):
         get_user_model().objects.create_user(**self.creds)
 
         self.client = AuthClient()
-        auth_response = self.client.post('/authentication/login', {
+        auth_response = self.client.post('/authentication/login', json.dumps({
             "username": self.creds["username"],
             "password": self.creds["password"],
-        })
+        }), content_type='application/json')
         # this is not a real assertion, just to crash early and have
         # a line to put a breakpoint on if it fails
         assert auth_response.status_code == 200
@@ -231,6 +232,7 @@ class CustomRegistrationTestCase(TestCase):
             "email": "lennon@thebeatles.com",
             "password": "johnpassword",
             "confirm_password": "johnpassword",
+            "avatar": "dontcare"
         }
         response = client.register(user)
         self.assertEqual(response.status_code, 200)
@@ -244,6 +246,7 @@ class CustomRegistrationTestCase(TestCase):
             "email": "lennon@thebeatles.com",
             "password": "johnpassword",
             "confirm_password": "johnpassword",
+            "avatar": "dontcare"
         }
         self.assertRaises(EpicPongUser.DoesNotExist,
                           EpicPongUser.objects.get,
@@ -252,13 +255,10 @@ class CustomRegistrationTestCase(TestCase):
         self.assertEqual(response.status_code, 200)
         EpicPongUser.objects.get(username="john")
 
-        login_response = client.post(f"/authentication/login", {
+        login_response = client.post(f"/authentication/login", json.dumps({
             "username": user["username"],
             "password": user["password"],
-        })
+        }), content_type='application/json')
 
         response = client.call_restricted()
         self.assertEqual(response.status_code, 200)
-
-
-
