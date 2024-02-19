@@ -13,7 +13,19 @@ from core.models import EpicPongUser
 from .forms import UserRegisterForm, UserLoginForm
 import jwt
 from backend.settings import env
+import io
+from .status import StatusLoginError, StatusLogin
+from core.service import CoreService
 
+def perform_auth(request, creds) -> Tuple[JsonResponse, EpicPongUser]:
+    user = django_authenticate(request,
+                               username=creds['username'],
+                               password=creds['password'])
+    if user is None:
+        return JsonResponse({
+            "status": "unauthorized",
+            "error": "Wrong credentials"
+        }, status=401), get_user_model().objects.none
 
 def perform_auth(request, creds) -> Tuple[JsonResponse, EpicPongUser]:
     user = django_authenticate(request,

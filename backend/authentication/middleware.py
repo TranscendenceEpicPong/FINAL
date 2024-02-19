@@ -18,7 +18,7 @@ def CustomAuthenticationMiddleware(get_response):
         if not authorization:
             return HttpResponse("Missing token", status=401)
         # sessionId = request.COOKIES.get('sessionid')
-        # session_key = request.session.session_key
+        session_key = request.session.session_key
 
         try:
             token = jwt.decode(authorization, env('JWT_SECRET'), algorithms=['HS256'])
