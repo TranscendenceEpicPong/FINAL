@@ -1,8 +1,9 @@
-from tournament_app.models import Tournament, Match, RegistrationTournament, TournamentRanking
+from tournament_app.models import Match, RegistrationTournament  # , TournamentRanking
+
 
 def update_tournament_results(tournament):
-
-    matches = Match.objects.filter(tournament=tournament, round_name='Pool Match')
+    matches = Match.objects.filter(tournament=tournament, phase=tournament.phase)
+    print(matches)
     for match in matches:
         winner_user = match.get_winner()
         loser_user = match.get_loser()
@@ -34,21 +35,12 @@ def update_tournament_results(tournament):
             winner.goal_conceded += match.score_player1
             loser.goal_average += match.score_player1 - match.score_player2
             loser.goal_conceded += match.score_player2
-        
-        winner_user.save()
-        loser_user.save()
 
         loser.goal_average += match.score_player2 - match.score_player1
         loser.goal_conceded += match.score_player1
 
-    TournamentRanking.update_ranking(tournament)
+        winner.save()
+        loser.save()
 
-def reset_ranking(tournament):
-    participants = RegistrationTournament.objects.filter(tournament=tournament)
-
-    for participant in participants:
-        participant.points = 0
-        participant.goal_average = 0
-        participant.goal_conceded = 0
-        participant.save()
-
+        print(f"Winner: points: {winner.points}, ccd: {winner.goal_conceded}, avg: {winner.goal_average}")
+        print(f"Loser: points: {loser.points}, ccd: {loser.goal_conceded}, avg: {loser.goal_average}")

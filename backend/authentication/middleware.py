@@ -9,7 +9,7 @@ from django.conf import settings
 
 def CustomAuthenticationMiddleware(get_response):
     def middleware(request: HttpRequest):
-        if request.path in settings.UNAUTHENTICATED_REQUESTS:
+        if request.path in settings.UNAUTHENTICATED_REQUESTS or request.path.startswith('/admin'):
             return get_response(request)
         elif not getattr(request, 'user', None) or not request.user.is_authenticated:
             return HttpResponseForbidden()
@@ -25,10 +25,7 @@ def CustomAuthenticationMiddleware(get_response):
         except jwt.PyJWTError:
             return HttpResponse("Wrong token", status=401)
 
-        # if token.get('sessionId') != session_key:
-        #     return HttpResponse("Wrong token", status=401)
-
-        response = get_response(request)
+        response: HttpResponse = get_response(request)
 
         return response
 
