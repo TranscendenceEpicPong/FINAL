@@ -10,4 +10,4 @@ def random_token():
 
 class EpicPongUser(AbstractUser):
     token = models.CharField(max_length=128, default=random_token)
-    avatar = models.CharField(max_length=512, default="")
+    avatar = models.TextField(default="")
