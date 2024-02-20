@@ -84,3 +84,4 @@ def logout(request):
     response = JsonResponse({"status": "success", "message": "Successfully logged out !"})
     response.delete_cookie('authorization')
     return response
+
