@@ -22,6 +22,7 @@ import core.views
 
 urlpatterns = [
     path("authentication/", include("authentication.urls")),
+    path("me/", include("me.urls")),
     path('admin/', admin.site.urls),
     path('server_info/', core.views.server_info, name='server-info'),
     path("friends/", include("friends.urls")),

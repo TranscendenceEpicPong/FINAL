@@ -72,6 +72,7 @@ INSTALLED_APPS = [
     'backend',
     'core',
     'authentication',
+    'me',
 ]
 
 MIDDLEWARE = [
