@@ -60,6 +60,7 @@ def login(request):
     response, _ = perform_auth(request, form.cleaned_data)
     return response
 
+
 @require_POST
 def register(request):
     try:
@@ -84,4 +85,3 @@ def logout(request):
     response = JsonResponse({"status": "success", "message": "Successfully logged out !"})
     response.delete_cookie('authorization')
     return response
-
