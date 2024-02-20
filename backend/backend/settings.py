@@ -55,8 +55,6 @@ ALLOWED_HOSTS = ["127.0.0.1", "0.0.0.0", "localhost", "10.0.0.34"]
 # Application definition
 
 INSTALLED_APPS = [
-    'friends',
-    'blocks',
     'daphne',
     'django.contrib.admin',
     'django.contrib.auth',
@@ -68,7 +66,8 @@ INSTALLED_APPS = [
     'django_extensions',
     'rest_framework',
     'corsheaders',
-
+    'friends',
+    'blocks',
     'backend',
     'core',
     'authentication',
