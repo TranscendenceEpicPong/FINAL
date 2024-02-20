@@ -86,8 +86,14 @@ class ChatConsumer(WebsocketConsumer):
         data_to_send = {
             'type':'chat_message',
             'content': message,
-            "sender": owner.username,
-            "receiver": user.username,
+            "sender": {
+                "username": owner.username,
+                "avatar": owner.avatar,
+            },
+            "receiver": {
+                "username": user.username,
+                "avatar": user.avatar,
+            },
         }
 
         async_to_sync(self.channel_layer.group_send)(

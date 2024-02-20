@@ -13,8 +13,14 @@ def index(request):
     messages = []
     for chat in chats:
         messages.append({
-            "sender": chat.sender.username,
-            "receiver": chat.receiver.username,
+            "sender": {
+                "username": chat.sender.username,
+                "avatar": chat.sender.avatar,
+            },
+            "receiver": {
+                "username": chat.receiver.username,
+                "avatar": chat.receiver.avatar,
+            },
             "content": chat.content
         })
 
