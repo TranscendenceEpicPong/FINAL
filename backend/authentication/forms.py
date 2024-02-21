@@ -53,12 +53,10 @@ class UserRegisterForm(forms.ModelForm):
         return cleaned_data
 
     def save(self, commit=True):
-        user = EpicPongUser.objects.create_user(
-            username=self.cleaned_data["username"],
-            password=self.cleaned_data["password"],
-            email=self.cleaned_data["email"],
-            avatar=self.cleaned_data["avatar"]
-        )
+        if len(self.cleaned_data["avatar"]) == 0:
+            del self.cleaned_data["avatar"]
+        del self.cleaned_data["confirm_password"]
+        user = EpicPongUser.objects.create_user(**self.cleaned_data)
         return user
 
 
