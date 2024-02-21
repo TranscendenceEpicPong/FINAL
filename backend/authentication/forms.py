@@ -50,11 +50,11 @@ class UserRegisterForm(forms.ModelForm):
             raise forms.ValidationError(
                 "Les mots de passe ne sont pas identiques"
             )
+        if len(cleaned_data.get('avatar')) == 0:
+            del cleaned_data['avatar']
         return cleaned_data
 
     def save(self, commit=True):
-        if len(self.cleaned_data["avatar"]) == 0:
-            del self.cleaned_data["avatar"]
         del self.cleaned_data["confirm_password"]
         user = EpicPongUser.objects.create_user(**self.cleaned_data)
         return user
