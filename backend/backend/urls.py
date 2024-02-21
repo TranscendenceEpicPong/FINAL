@@ -21,8 +21,9 @@ from django.urls import path, include
 import core.views
 
 urlpatterns = [
-    path('tournaments/', include('tournament_app.urls'), name='tournament'),
     path("authentication/", include("authentication.urls")),
     path('admin/', admin.site.urls),
     path('server_info/', core.views.server_info, name='server-info'),
+    path("friends/", include("friends.urls")),
+    path("blocks/", include("blocks.urls")),
 ]

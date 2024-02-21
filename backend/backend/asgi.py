@@ -10,7 +10,19 @@ https://docs.djangoproject.com/en/4.2/howto/deployment/asgi/
 import os
 
 from django.core.asgi import get_asgi_application
+from channels.routing import ProtocolTypeRouter, URLRouter
+from friends import routing as friend_routing
+from blocks import routing as block_routing
 
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'backend.settings')
 
-application = get_asgi_application()
+django_asgi_application = get_asgi_application()
+
+application = ProtocolTypeRouter({
+    "http": django_asgi_application,
+    "websocket": 
+        URLRouter([
+            *friend_routing.websocket_urlpatterns,
+            *block_routing.websocket_urlpatterns
+        ])
+})
