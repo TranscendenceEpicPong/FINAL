@@ -7,9 +7,9 @@ class UserConfig(Enum):
         "max_length": "Le nom d'utilisateur est trop long (Max 20 caractères)",
         "min_length": "Le nom d'utilisateur est trop court (Min 3 caractères)"
     }}
-    AVATAR = {"label": "Avatar", "max_length": 256, "min_length": 3, "error_messages": {
+    AVATAR = {"label": "Avatar", "max_length": 32000, "min_length": 3, "error_messages": {
         "required": "Ce champ est obligatoire",
-        "max_length": "Le lien de l'avatar est trop long (Max 256 caractères)",
+        "max_length": "Le lien de l'avatar est trop long (Max 32000 caractères)",
         "min_length": "Le lien de l'avatar est trop court (Min 3 caractères)"
     }}
     PASSWORD = {"label": "Mot de passe", "max_length": 256, "min_length": 3, "error_messages": {

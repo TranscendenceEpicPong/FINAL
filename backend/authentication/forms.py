@@ -19,7 +19,7 @@ class UserRegisterForm(forms.ModelForm):
         label=UserConfig.AVATAR.value['label'],
         max_length=UserConfig.AVATAR.value['max_length'],
         min_length=UserConfig.AVATAR.value['min_length'],
-        required=True,
+        required=False,
         error_messages=UserConfig.AVATAR.value['error_messages']
     )
     password = forms.CharField(
@@ -56,7 +56,8 @@ class UserRegisterForm(forms.ModelForm):
         user = EpicPongUser.objects.create_user(
             username=self.cleaned_data["username"],
             password=self.cleaned_data["password"],
-            email=self.cleaned_data["email"]
+            email=self.cleaned_data["email"],
+            avatar=self.cleaned_data["avatar"]
         )
         return user
 
