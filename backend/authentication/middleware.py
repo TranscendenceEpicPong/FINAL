@@ -12,7 +12,7 @@ def CustomAuthenticationMiddleware(get_response):
         if request.path in settings.UNAUTHENTICATED_REQUESTS or request.path.startswith('/admin'):
             return get_response(request)
         elif not getattr(request, 'user', None) or not request.user.is_authenticated:
-            return JsonResponse({"message": "Non authentifié", "status": 401}, status=401)
+            return JsonResponse({"message": "Non authentifié", "status": 403}, status=403)
 
         authorization = request.COOKIES.get('authorization')
         if not authorization:
