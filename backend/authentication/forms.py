@@ -19,7 +19,7 @@ class UserRegisterForm(forms.ModelForm):
         label=UserConfig.AVATAR.value['label'],
         max_length=UserConfig.AVATAR.value['max_length'],
         min_length=UserConfig.AVATAR.value['min_length'],
-        required=True,
+        required=False,
         error_messages=UserConfig.AVATAR.value['error_messages']
     )
     password = forms.CharField(
@@ -50,14 +50,13 @@ class UserRegisterForm(forms.ModelForm):
             raise forms.ValidationError(
                 "Les mots de passe ne sont pas identiques"
             )
+        if len(cleaned_data.get('avatar')) == 0:
+            del cleaned_data['avatar']
         return cleaned_data
 
     def save(self, commit=True):
-        user = EpicPongUser.objects.create_user(
-            username=self.cleaned_data["username"],
-            password=self.cleaned_data["password"],
-            email=self.cleaned_data["email"]
-        )
+        del self.cleaned_data["confirm_password"]
+        user = EpicPongUser.objects.create_user(**self.cleaned_data)
         return user
 
 
