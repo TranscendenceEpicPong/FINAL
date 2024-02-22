@@ -134,7 +134,10 @@ class Tournament(models.Model):
             self.ranking.filter(id__in=ids_to_eliminate).update(is_active=False)
             # print(f"Remaining {self.active_count} participants")
         else:
-            self.matches.filter(phase=prev_phase).values()
+            losers = [match.get_loser() for match in self.matches.filter(
+                phase=prev_phase
+            )]
+            self.participants.filter(user__in=losers).update(is_active=False)
 
     def organize_next_matches(self):
         if self.phase == self.Phases.POOL_PHASE:
