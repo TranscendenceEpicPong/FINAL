@@ -55,5 +55,5 @@ class Command(BaseCommand):
             self.stdout.write(self.style.SUCCESS(f'Match: {match.player1.username} vs {match.player2.username} - Scores: {match.score_player1}-{match.score_player2}'))
         
         if tournament.Phases.POOL_PHASE == phase:
-            update_tournament_results(tournament)
+            tournament.update_tournament_results()
         self.stdout.write(self.style.SUCCESS('Simulation complete.'))

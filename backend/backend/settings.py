@@ -73,6 +73,7 @@ INSTALLED_APPS = [
     'chats',
     'core',
     'authentication',
+    'tournament_app',
 ]
 
 MIDDLEWARE = [
