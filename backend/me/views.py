@@ -2,6 +2,7 @@ from django.http import HttpResponse, JsonResponse, HttpResponseBadRequest
 from django.views.decorators.http import require_http_methods
 from core.models import EpicPongUser as User
 from django.core.serializers import serialize
+from django.contrib.auth import update_session_auth_hash
 import json
 import jwt
 from backend.settings import env
@@ -9,6 +10,7 @@ from django.http import QueryDict
 from .status import StatusError, StatusSuccess
 from core.config import UserConfig
 from .service import UserService
+from core.helpers import get_response, get_cookie
 from django.contrib.auth import \
     authenticate as django_authenticate, \
     login as django_login, \
@@ -16,6 +18,7 @@ from django.contrib.auth import \
     get_user_model, \
     get_user, \
     update_session_auth_hash
+import datetime
 
 # Create your views here.
 @require_http_methods("GET")
@@ -26,9 +29,6 @@ def index(request):
         "username": user.username,
         "avatar": user.avatar,
     }, safe=False, status=200)
-
-def get_response(response):
-    return JsonResponse(response, safe=False, status=response['status'])
 
 @require_http_methods("PATCH")
 def update(request):
@@ -62,28 +62,31 @@ def update(request):
     if validation_confirm_password != StatusSuccess.PASSWORD_SUCCESS_VALIDATION.value:
         return get_response(validation_confirm_password)
 
-    updating_user = User.objects.get(id=current_user.id)
-    updating_user.username = username
-    updating_user.avatar = avatar
+    request.user.username = username
+    if avatar and len(avatar) > 0:
+        request.user.avatar = avatar
 
     if password and confirm_password and len(password) > 0 and password == confirm_password:
-        updating_user.set_password(password)
-        user = django_authenticate(request,
-                            username=username,
-                            password=password)
-
-        if user is None:
-            return JsonResponse({
-                "status": "unauthorized",
-                "error": "Wrong credentials"
-            }, status=401), get_user_model().objects.none
-
-        django_login(request, user)
-
-    updating_user.save()
-
-    return JsonResponse({
-        "id": updating_user.id,
-        "username": updating_user.username,
-        "avatar": updating_user.avatar,
+        request.user.set_password(password)
+        update_session_auth_hash(request, request.user)
+    request.user.save()
+    response = JsonResponse({
+        "id": request.user.id,
+        "username": request.user.username,
+        "avatar": request.user.avatar,
     }, safe=False, status=200)
+
+    token = jwt.encode({
+        'id': get_user_model().objects.get(username=request.user.username).id,
+        'username': request.user.username,
+        'email': request.user.email,
+        'iat': datetime.datetime.now(),
+        'exp': datetime.datetime.now() + datetime.timedelta(days=1)
+    }, env('JWT_SECRET'))
+
+    response.set_cookie('authorization',
+        value=token,
+        path='/',
+        samesite='Strict')
+
+    return response

@@ -42,6 +42,9 @@ class UserService:
         return StatusSuccess.AVATAR_SUCCESS_VALIDATION.value
 
     def __check_avatar_length(self, avatar):
+        if type(avatar) == str and len(avatar) == 0:
+            return StatusSuccess.AVATAR_SUCCESS_VALIDATION.value
+
         if len(avatar) < UserConfig.AVATAR.value['min_length']:
             return StatusError.AVATAR_TOO_SHORT.value
 
