@@ -44,7 +44,7 @@ def search(request, username):
         "avatar": user.avatar,
         "wins": 10,
         "loses": 5,
-    }, safe=False, status=200)
+    }, status=200)
 
 @require_http_methods("GET")
 def index(request):
@@ -53,7 +53,7 @@ def index(request):
         "id": user.id,
         "username": user.username,
         "avatar": user.avatar,
-    }, safe=False, status=200)
+    }, status=200)
 
 @require_http_methods("PATCH")
 def update(request):
@@ -99,7 +99,7 @@ def update(request):
         "id": request.user.id,
         "username": request.user.username,
         "avatar": request.user.avatar,
-    }, safe=False, status=200)
+    }, status=200)
 
     token = jwt.encode({
         'id': get_user_model().objects.get(username=request.user.username).id,
