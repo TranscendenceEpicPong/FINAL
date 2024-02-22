@@ -1,27 +1,21 @@
 from django.http import JsonResponse
 from django.views.decorators.http import require_GET
 from django.middleware.csrf import get_token
-from django.http import HttpResponse, JsonResponse, HttpResponseBadRequest
 from django.views.decorators.http import require_http_methods
 from core.models import EpicPongUser as User
-from django.core.serializers import serialize
 from django.contrib.auth import update_session_auth_hash
 import json
 import jwt
 from backend.settings import env
-from django.http import QueryDict
 from .status import StatusError, StatusSuccess
-from core.config import UserConfig
 from .service import UserService
 from core.helpers import get_response, get_cookie
 from django.contrib.auth import \
-    authenticate as django_authenticate, \
-    login as django_login, \
-    logout as django_logout, \
     get_user_model, \
     get_user, \
     update_session_auth_hash
 import datetime
+from blocks.service import BlockService
 
 @require_GET
 def server_info(request):
@@ -32,6 +26,25 @@ def server_info(request):
     })
     get_token(request)
     return response
+
+@require_http_methods("GET")
+def search(request, username):
+    owner = request.user
+
+    if owner is None:
+        return get_response({ "message": "Votre compte est invalide", "status": 403})
+
+    user = User.objects.filter(username=username).first()
+    block_service = BlockService(user)
+    if user is None or block_service.is_block(owner):
+        return get_response({ "message": "Utilisateur introuvable", "status": 404})
+    return JsonResponse({
+        "id": user.id,
+        "username": user.username,
+        "avatar": user.avatar,
+        "wins": 10,
+        "loses": 5,
+    }, safe=False, status=200)
 
 @require_http_methods("GET")
 def index(request):

@@ -19,6 +19,7 @@ from django.urls import path
 from . import views
 
 urlpatterns = [
+    path('users/<str:username>', views.search, name='search'),
     path('me/', views.index, name='index'),
     path('me/update', views.update, name='update'),
 ]
