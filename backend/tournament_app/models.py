@@ -100,6 +100,8 @@ class Tournament(models.Model):
             logging.error(f'Tournament "{self.name}" invalid number of participants.')
             raise Exception("Number of participants out of range")
 
+        prev_phase = self.phase
+
         next_phase = self.get_next_phase()
         if next_phase is None:
             raise Exception("No more phases")
@@ -110,7 +112,7 @@ class Tournament(models.Model):
         self.save()
 
         if self.phase not in [self.Phases.NOT_STARTED, self.Phases.POOL_PHASE]:
-            self.eliminate_participants()
+            self.eliminate_participants(prev_phase)
 
         if self.phase != self.Phases.NOT_STARTED:
             self.organize_next_matches()
@@ -124,18 +126,21 @@ class Tournament(models.Model):
             'goal_conceded': participant.goal_conceded
         } for participant in self.ranking]
 
-    def eliminate_participants(self):
-        limit = PHASE_LIMITS[self.phase_index][1]
-        ids_to_eliminate = self.ranking[limit:].values_list('id', flat=True)
-        # print(f"Eliminating {ids_to_eliminate.count()} participants")
-        self.ranking.filter(id__in=ids_to_eliminate).update(is_active=False)
-        # print(f"Remaining {self.active_count} participants")
+    def eliminate_participants(self, prev_phase):
+        if prev_phase == self.Phases.POOL_PHASE:
+            limit = PHASE_LIMITS[self.phase_index][1]
+            ids_to_eliminate = self.ranking[limit:].values_list('id', flat=True)
+            # print(f"Eliminating {ids_to_eliminate.count()} participants")
+            self.ranking.filter(id__in=ids_to_eliminate).update(is_active=False)
+            # print(f"Remaining {self.active_count} participants")
+        else:
+            self.matches.filter(phase=prev_phase).values()
 
     def organize_next_matches(self):
         if self.phase == self.Phases.POOL_PHASE:
             return self.organize_pool_matches()
 
-        participants = self.active_participants
+        participants = self.ranking
         half = self.active_count / 2
         pairs = list(zip_longest(
             participants[:half], reversed(participants[half:])
