@@ -6,7 +6,7 @@ class BlockService:
     def __init__(self, owner):
         self.__owner = owner
 
-    def __is_block(self, user):
+    def is_block(self, user):
         return Blocks.objects.filter(user=self.__owner, block=user).exists()
 
     def __delete(self, user):
@@ -23,7 +23,7 @@ class BlockService:
         if user.id == self.__owner.id:
             return StatusAdding.ADDING_YOURSELF.value
 
-        if self.__is_block(user):
+        if self.is_block(user):
             return StatusAdding.ALREADY_BLOCKED.value
 
         Friends.objects.filter(user=self.__owner, friend=user).delete()
@@ -36,7 +36,7 @@ class BlockService:
         if user.id == self.__owner.id:
             return StatusRemoving.REMOVING_YOURSELF.value
 
-        if self.__is_block(user) == False:
+        if self.is_block(user) == False:
             return StatusRemoving.NOT_BLOCKED.value
 
         if self.__delete(user) == True:

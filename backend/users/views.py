@@ -6,20 +6,21 @@ import json
 import jwt
 from backend.settings import env
 from core.helpers import get_response, get_cookie
+from blocks.service import BlockService
 
 # Create your views here.
 @require_http_methods("GET")
 def search(request, username):
     authorization = get_cookie(request, 'authorization')
     owner_id = jwt.decode(authorization, env('JWT_SECRET'), algorithms=['HS256']).get('id')
-    print(owner_id)
     owner = User.objects.filter(id=owner_id).first()
 
     if owner is None:
         return get_response({ "message": "Votre compte est invalide", "status": 403})
 
     user = User.objects.filter(username=username).first()
-    if user is None:
+    block_service = BlockService(user)
+    if user is None or block_service.is_block(owner):
         return get_response({ "message": "Utilisateur introuvable", "status": 404})
     return JsonResponse({
         "id": user.id,
