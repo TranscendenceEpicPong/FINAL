@@ -65,7 +65,7 @@ class UserUpdateForm(forms.ModelForm):
         return cleaned_data
 
 
-    def update(self, commit=True):
+    def save(self, commit=True):
         if self.cleaned_data.get('password'):
             self.instance.set_password(self.cleaned_data['password'])
         if self.cleaned_data.get('avatar'):
