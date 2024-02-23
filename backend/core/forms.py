@@ -44,26 +44,26 @@ class UserUpdateForm(forms.ModelForm):
 
     def clean(self):
         cleaned_data = super().clean()
-
         password = cleaned_data.get("password")
         confirm_password = cleaned_data.get("confirm_password")
         if password != confirm_password:
             raise forms.ValidationError(
                 "Les mots de passe ne sont pas identiques"
             )
-        if len(cleaned_data.get('password')) > 0:
+        if cleaned_data.get('password') and len(cleaned_data.get('password')) > 0:
             if cleaned_data.get('password') != cleaned_data.get('confirm_password'):
                 raise forms.ValidationError(
                     "Les mot de passe sont différents"
                 )
+        else:
+            del cleaned_data['password']
+            del cleaned_data['confirm_password']
+
+        # Ne fonctionnait pas avec un simple "if cleaned_data.get('avatar') and ..."
+        if cleaned_data.get('avatar') is not None and len(cleaned_data.get('avatar')) == 0:
+            del cleaned_data['avatar']
         return cleaned_data
 
-
-
-    def save(self, commit=True):
-        del self.cleaned_data["confirm_password"]
-        user = EpicPongUser.objects.create_user(**self.cleaned_data)
-        return user
 
     def update(self, commit=True):
         if self.cleaned_data.get('password'):
@@ -73,4 +73,5 @@ class UserUpdateForm(forms.ModelForm):
         if self.cleaned_data.get('username'):
             self.instance.username = self.cleaned_data.get('username')
         self.instance.save()
+        
         return self.instance

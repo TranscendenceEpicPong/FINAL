@@ -60,7 +60,7 @@ def update(request):
     except:
         return get_response(StatusError.BAD_JSON_FORMAT.value)
     
-    form = UserUpdateForm(body, instance=current_user)
+    form = UserUpdateForm(body, instance=request.user)
     if not form.is_valid():
         return get_response({"message": "Saisie incorrect", "status": 400})
     form.update()
@@ -69,6 +69,8 @@ def update(request):
     avatar = form.cleaned_data.get('avatar')
     password = form.cleaned_data.get('password')
     confirm_password = form.cleaned_data.get('confirm_password')
+
+
 
     if password and confirm_password and len(password) > 0 and password == confirm_password:
         update_session_auth_hash(request, request.user)
