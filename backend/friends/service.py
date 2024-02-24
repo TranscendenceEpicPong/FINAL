@@ -1,6 +1,7 @@
 from .status import Status, StatusAdding, StatusRemoving
 from .models import Friends
 from blocks.models import Blocks
+from chats.models import Chats
 
 class FriendService:
     def __init__(self, owner):
@@ -77,6 +78,10 @@ class FriendService:
         except Friends.DoesNotExist:
             return False
         friend.delete()
+
+        Chats.objects.filter(sender=self.__owner, receiver=user).delete()
+        Chats.objects.filter(sender=user, receiver=self.__owner).delete()
+
         return True
 
     def add_friend(self, user):
