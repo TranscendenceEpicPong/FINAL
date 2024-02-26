@@ -44,10 +44,11 @@ class ChatConsumer(WebsocketConsumer):
             }))
             return
 
-        name = infos_json['username']
+        name = infos_json.get('username')
+        username = text_data_json.get('username')
         message = text_data_json.get('message')
 
-        if not text_data_json.get('message') or not text_data_json.get('username'):
+        if not message or not username:
             self.send(text_data=json.dumps({
                 'type':'error',
                 'message':"Message ou nom d'utilisateur manquant"
@@ -55,12 +56,12 @@ class ChatConsumer(WebsocketConsumer):
             return
 
         try:
-            user = EpicPongUser.objects.get(username=text_data_json['username'])
+            user = EpicPongUser.objects.get(username=username)
         except EpicPongUser.DoesNotExist:
             self.send(text_data=json.dumps({
                 'type':'error',
                 'sender': name,
-                'receiver': text_data_json.get('username'),
+                'receiver': username,
                 'message':'Utilisateur introuvable'
             }))
             return
@@ -69,7 +70,7 @@ class ChatConsumer(WebsocketConsumer):
             self.send(text_data=json.dumps({
                 'type':'error',
                 'sender': name,
-                'receiver': text_data_json.get('username'),
+                'receiver': username,
                 'message':"Vous ne pouvez pas vous envoyer de message à vous même"
             }))
             return
@@ -78,7 +79,7 @@ class ChatConsumer(WebsocketConsumer):
             self.send(text_data=json.dumps({
                 'type':'error',
                 'sender': name,
-                'receiver': text_data_json.get('username'),
+                'receiver': username,
                 'message': "Vous n'êtes pas amis avec cet utilisateur"
             }))
             return

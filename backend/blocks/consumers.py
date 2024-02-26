@@ -40,8 +40,9 @@ class BlockConsumer(WebsocketConsumer):
                 'message':'Données invalides'
             }))
             return
+        username = text_data_json.get('username')
         try:
-            user = EpicPongUser.objects.get(username=text_data_json['username'])
+            user = EpicPongUser.objects.get(username=username)
         except EpicPongUser.DoesNotExist:
             self.send(text_data=json.dumps({
                 'type':'error',
