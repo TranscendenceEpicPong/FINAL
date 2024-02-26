@@ -15,7 +15,6 @@ import jwt
 from backend.settings import env
 import io
 from .status import StatusLoginError, StatusLogin
-from core.service import CoreService
 
 def perform_auth(request, creds) -> Tuple[JsonResponse, EpicPongUser]:
     user = django_authenticate(request,
