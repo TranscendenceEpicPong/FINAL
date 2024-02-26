@@ -14,7 +14,6 @@ from core.helpers import get_response, get_cookie
 def index(request):
     authorization = get_cookie(request, 'authorization')
     owner_id = jwt.decode(authorization, env('JWT_SECRET'), algorithms=['HS256']).get('id')
-    print(owner_id)
     owner = User.objects.filter(id=owner_id).first()
 
     if owner is None:
