@@ -1,5 +1,5 @@
 import jwt
-from django.http import HttpResponse, HttpResponseForbidden, HttpRequest
+from django.http import HttpResponse, HttpResponseForbidden, HttpRequest, JsonResponse
 from backend.settings import env
 from django.conf import settings
 
@@ -12,7 +12,7 @@ def CustomAuthenticationMiddleware(get_response):
         if request.path in settings.UNAUTHENTICATED_REQUESTS or request.path.startswith('/admin'):
             return get_response(request)
         elif not getattr(request, 'user', None) or not request.user.is_authenticated:
-            return HttpResponseForbidden()
+            return JsonResponse({"message": "Non authentifié", "status": 401}, status=401)
 
         authorization = request.COOKIES.get('authorization')
         if not authorization:

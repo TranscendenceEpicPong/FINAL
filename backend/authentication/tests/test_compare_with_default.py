@@ -165,7 +165,7 @@ class AuthenticationTestCase(TestCase):
 
         # instead of the default behaviour (redirect), we should just throw 401
         response = client.call_restricted()
-        self.assertEqual(response.status_code, 403)
+        self.assertEqual(response.status_code, 401)
 
     @modify_settings(MIDDLEWARE={
         'remove': 'authentication.middleware.CustomAuthenticationMiddleware',
@@ -186,7 +186,7 @@ class AuthenticationTestCase(TestCase):
         text = ''.join(random.choices(string.ascii_lowercase, k=5))
         response = client.call_add(text)
         # The path '/add' is not allowed in the middleware, so it should fail
-        self.assertEqual(response.status_code, 403)
+        self.assertEqual(response.status_code, 401)
         # And this should raise an exception:
         self.assertRaises(Dummy.DoesNotExist, Dummy.objects.get, text=text)
 
