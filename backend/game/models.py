@@ -3,6 +3,7 @@ from core.models import EpicPongUser as User
 from .status import Status
 
 # Create your models here.
+OBJECTIF_SCORE = 5
 class Game(models.Model):
     player1 = models.ForeignKey(User, on_delete=models.CASCADE, related_name='opponents_of_user')
     player2 = models.ForeignKey(User, on_delete=models.CASCADE, related_name='opponents_user', null=True)
@@ -24,3 +25,23 @@ class Game(models.Model):
             self.winner = self.player1
         self.status = Status.FINISHED.value
         self.save()
+
+    def player_score(self, player_have_score):
+        if player_have_score == self.player1:
+            self.score_player1 += 1
+        else:
+            self.score_player2 += 1
+        self.save()
+
+    def get_the_winner(self):
+        if self.score_player1 == OBJECTIF_SCORE:
+            return self.player1
+        elif self.score_player2 == OBJECTIF_SCORE:
+            return self.player2
+        return None
+
+    def set_winner(self, user):
+        self.winner = user
+        self.status = Status.FINISHED.value
+        self.save()
+        return self.winner
