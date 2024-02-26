@@ -29,33 +29,33 @@ def decode_query_string(query_string):
 class GameConsumer(AsyncWebsocketConsumer):
     players = {}
     OBJECTIVE_SCORE = 3
+    PADDLE_HEIGHT = 100
+    PADDLE_WIDTH = 10
+    BALL_RADIUS = 5
     games = {
         0: {
+            "id": 0,
             "player1": {
                 "id": 0,
                 "username": "",
                 "score": 0,
-                "startX": 20,
-                "startY": 150,
-                "endX": 20,
-                "endY": 250,
+                "x": 20,
+                "y": 200,
                 "color": 'green'
             },
             "player2": {
                 "id": 0,
                 "username": "",
                 "score": 0,
-                "startX": 580,
-                "startY": 150,
-                "endX": 580,
-                "endY": 250,
+                "x": 580,
+                "y": 200,
                 "color": 'green'
             },
             "ball": {
                 "x": 300,
                 "y": 200,
                 "dx": 5,
-                "dy": 5,
+                "dy": 0,
             },
             "status": -1,
             "winner": 0,
@@ -66,238 +66,155 @@ class GameConsumer(AsyncWebsocketConsumer):
     async def connect(self):
         infos_json = decode_query_string(self.scope['query_string'])
         if infos_json is None:
-            print("infos_json is None")
             self.close()
             return
 
-        user = await sync_to_async(EpicPongUser.objects.filter)(id=infos_json['id'])
+        user = await self.get_user(infos_json['id'])
+        if user is None:
+            self.close()
+            return
+        await self.accept()
+
+    async def receive(self, text_data):
+        infos_json = decode_query_string(self.scope['query_string'])
+        data = json.loads(text_data)
+        user = await self.get_user(infos_json['id'])
+        if data['action'] == 'join':
+            await self.find_game(user)
+
+    async def get_user(self, userId):
+        user = await sync_to_async(EpicPongUser.objects.filter)(id=userId)
         if await sync_to_async(user.count)() == 0:
-            return self.close()
-        user = await sync_to_async(user.first)()
+            return None
+        return await sync_to_async(user.first)()
 
-        if self.players.get(infos_json['id']) is not None:
-            print("User already connected")
-            self.close()
-            return
+    async def find_game(self, user):
+        game = await sync_to_async(Game.objects.filter)(player2__isnull=True)
+        if await sync_to_async(game.count)() == 0:
+            await self.create_game(user)
+        else:
+            game = await sync_to_async(game.first)()
+            await self.join_game(game, 2, user)
 
-        service = GameService(user)
-        game = await sync_to_async(service.find_a_game)()
+    async def create_game(self, user):
+        game = await sync_to_async(Game.objects.create)(player1=user)
+        await self.send(text_data=json.dumps({
+            'action': 'created',
+            'gameId': game.id
+        }))
+        await self.join_game(game, 1, user)
 
-        self.players[f"{infos_json['id']}"] = f"{game.id}"
+    async def join_game(self, game, player_number, user):
+        if player_number == 1:
+            game.player1 = user
+            game.status = Status.WAITING.value
+        else:
+            game.player2 = user
+            game.status = Status.STARTED.value
+        await sync_to_async(game.save)()
+        self.players[f"{user.id}"] = f"{game.id}"
+
+        if self.games.get(f"{game.id}") is None:
+            self.games[f"{game.id}"] = copy.deepcopy(self.games[0])
+
+        self.games[f"{game.id}"]['id'] = game.id
+        self.games[f"{game.id}"][f"player{player_number}"]['id'] = user.id
+        self.games[f"{game.id}"][f"player{player_number}"]['username'] = user.username
+        self.games[f"{game.id}"]["status"] = game.status
+
         self.room_group_name = f"{prefix}-{game.id}"
-
-        self.create_or_join_game(game, infos_json)
 
         await self.channel_layer.group_add(
             self.room_group_name,
             self.channel_name
         )
-        await self.accept()
-        
-        if game.player2 is None:
-            await self.send(text_data=json.dumps({
-                "type": "game_status",
-                "message": f"Partie créée ({game.id})",
-                "status": game.status,
-            }))
-        else:
-            await self.send(text_data=json.dumps({
-                "type": "game_status",
-                "message": f"Partie rejointe ({game.id})",
-                "status": game.status,
-            }))
-        
-        if game.status == Status.STARTED.value:
-            await self.channel_layer.group_send(
-                f"{prefix}-{self.players.get(infos_json['id'])}",
-                {
-                    "type": "game_status",
-                    "message": "Le jeu peut commencer",
-                    "status": game.status,
-                }
-            )
-
-            asyncio.create_task(self.ball(self.players[f"{infos_json['id']}"]))
-
-    def create_or_join_game(self, game, user):
-        if self.games.get(f"{game.id}") is None:
-            self.games[f"{game.id}"] = copy.deepcopy(self.games[0])
-            self.games[f"{game.id}"]["player1"]["id"] = user['id']
-            self.games[f"{game.id}"]["player1"]["username"] = user['username']
-            self.games[f"{game.id}"]["status"] = game.status
-        else:
-            self.games[f"{game.id}"]["player2"]["id"] = user['id']
-            self.games[f"{game.id}"]["player2"]["username"] = user['username']
-            self.games[f"{game.id}"]["status"] = game.status
-
-    async def receive(self, text_data):
-        infos_json = decode_query_string(self.scope['query_string'])
-        owner = await sync_to_async(get_user_model().objects.get)(id=infos_json['id'])
-        text_data_json = json.loads(text_data)
-        game_id = self.players[f"{owner.id}"]
-
-        player = self.games[f"{game_id}"]["player1"]
-        if player['id'] != infos_json['id']:
-            player = self.games[f"{game_id}"]["player2"]
-
-        if text_data_json['direction'] in ['ArrowUp', 'w'] and player['startY'] > 60:
-            player['startY'] -= 10
-            player['endY'] -= 10
-
-        if text_data_json['direction'] in ['ArrowDown', 's'] and player['endY'] < 340:
-            player['startY'] += 10
-            player['endY'] += 10
 
         await self.channel_layer.group_send(
-            f"{prefix}-{game_id}",
+            self.room_group_name,
             {
-                'type': 'game_status',
-                'status': 'update_padel',
-                'player1': self.games[f"{game_id}"]['player1'],
-                'player2': self.games[f"{game_id}"]['player2'],
+                "type": "game_infos",
+                "action": "joined",
+                "game": self.games[f"{game.id}"]
             }
         )
 
-    async def ball(self, game_id):
-        while self.games.get(f"{game_id}") and self.games[f"{game_id}"]['status'] == Status.STARTED.value:
-            await self.channel_layer.group_send(
-                    f"{prefix}-{game_id}",
-                    {
-                        'type': 'game_status',
-                        'status': 'update_ball',
-                        'position': self.games[f"{game_id}"]['ball'],
-                        "score": {
-                            "player": self.games[f"{game_id}"]['player_scored'],
-                            "player1": {
-                                "id": self.games[f"{game_id}"]['player1']['id'],
-                                "username": self.games[f"{game_id}"]['player1']['username'],
-                                "score": self.games[f"{game_id}"]['player1']['score'],
-                            },
-                            "player2": {
-                                "id": self.games[f"{game_id}"]['player2']['id'],
-                                "username": self.games[f"{game_id}"]['player2']['username'],
-                                "score": self.games[f"{game_id}"]['player2']['score'],
-                            }
-                        },
-                    }
-                )
-            self.update_ball(game_id)
-            await asyncio.sleep(0.1)
-        await self.channel_layer.group_send(
-            f"{prefix}-{game_id}",
-            {
-                'type': 'game_status',
-                'status': 'game_end',
-                'winner': self.games[f"{game_id}"]['winner'],
-                "score": {
-                    "player": self.games[f"{game_id}"]['player_scored'],
-                    "player1": {
-                        "id": self.games[f"{game_id}"]['player1']['id'],
-                        "username": self.games[f"{game_id}"]['player1']['username'],
-                        "score": self.games[f"{game_id}"]['player1']['score'],
-                    },
-                    "player2": {
-                        "id": self.games[f"{game_id}"]['player2']['id'],
-                        "username": self.games[f"{game_id}"]['player2']['username'],
-                        "score": self.games[f"{game_id}"]['player2']['score'],
-                    }
-                },
-            }
-        )
-        game = self.games[f"{game_id}"]
-        game_db = await sync_to_async(Game.objects.get)(id=game_id)
-        game_db.score_player1 = game["player1"]["score"]
-        game_db.score_player2 = game["player2"]["score"]
-        if game['winner'] == game["player1"]["id"]:
-            game_db.winner = await sync_to_async(get_user_model().objects.get)(id=game["player1"]["id"])
-        else:
-            game_db.winner = await sync_to_async(get_user_model().objects.get)(id=game["player2"]["id"])
-        await sync_to_async(game_db.save)()
-        self.close()
+        if player_number == 2:
+            asyncio.create_task(self.game_loop({
+                "game": self.games[f"{game.id}"]
+            }))
 
-    def update_ball(self, game_id):
-        game = self.games.get(f"{game_id}")
-        game['player_scored'] = 0
-        if game['ball']['x'] + game['ball']['dx'] >= game['player2']['startX'] - 20:
-            if game['ball']['y'] < game['player2']['endY'] and game['ball']['y'] > game['player2']['startY']:
-                game['ball']['dx'] = -game['ball']['dx']
-            else:
-                game['player_scored'] = game['player1']['id']
-                game['ball'] = copy.deepcopy(self.games[0]['ball'])
-                game['player1']['score'] += 1
-                if game['player1']['score'] == self.OBJECTIVE_SCORE:
-                    game['status'] = Status.FINISHED
-                    game['winner'] = game['player1']['id']
-
-        if game['ball']['x'] + game['ball']['dx'] <= game['player1']['startX'] + 20:
-            if game['ball']['y'] < game['player1']['endY'] and game['ball']['y'] > game['player1']['startY']:
-                game['ball']['dx'] = -game['ball']['dx']
-            else:
-                game['player_scored'] = game['player2']['id']
-                game['ball'] = copy.deepcopy(self.games[0]['ball'])
-                game['player2']['score'] += 1
-                if game['player2']['score'] == self.OBJECTIVE_SCORE:
-                    game['status'] = Status.FINISHED
-                    game['winner'] = game['player2']['id']
-
-        if game['player_scored'] == 0:
-            if game['ball']['y'] + 15 >= 400 or game['ball']['y'] - 15 <= 0:
-                game['ball']['dy'] = -game['ball']['dy']
-            else:
-                game['ball']['dy'] = game['ball']['dy']
-            
-            game['ball']['x'] += game['ball']['dx']
-            game['ball']['y'] += game['ball']['dy']
-        self.games[f"{game_id}"]['ball'] = game['ball']
-
-    async def game_status(self, event):
+    async def game_infos(self, event):
         await self.send(text_data=json.dumps(event))
 
-    async def disconnect(self, code):
-        if code == 1006:
-            return super().disconnect(code)
+    async def leave_game(self, game, user):
+        if game.player2 is None:
+            await sync_to_async(game.delete)()
+            return
 
+        if game.player1 == user:
+            game.winner = game.player2
+        else:
+            game.winner = game.player1
+        game.status = Status.FINISHED.value
+        await sync_to_async(game.save)()
+
+    async def disconnect(self, close_code):
         infos_json = decode_query_string(self.scope['query_string'])
-        if infos_json is None:
-            return super().disconnect(code)
-        owner = await sync_to_async(get_user_model().objects.get)(id=infos_json['id'])
-        service = GameService(owner)
-        game = await sync_to_async(service.get_current_game)()
-        stopped_game = await sync_to_async(service.stop_game)(game)
-
-        if stopped_game is None:
-            await self.channel_layer.group_discard(
-                f"{prefix}-{self.players[f"{infos_json['id']}"]}",
-                self.channel_name
-            )
-
-            return super().disconnect(code)
-
-        await self.channel_layer.group_send(
-            f"{prefix}-{self.players[f"{infos_json['id']}"]}",
-            {
-                "type": "game_status",
-                "message": "Le jeu est terminé",
-                "status": stopped_game.get('status')
-            }
-        )
-
-        if stopped_game is not None:
-            await self.channel_layer.group_send(
-                f"{prefix}-{self.players[f"{infos_json['id']}"]}",
-                {
-                    "type": "game_status",
-                    "message": f"Vainqueur: {stopped_game.get('winner').username}",
-                    "status": stopped_game.get('status')
-                }
-            )
-
+        user = await self.get_user(infos_json['id'])
+        if user is None:
+            return
+        game = await sync_to_async(Game.objects.filter)(Q(player1=user) | Q(player2=user), Q(status=Status.WAITING.value) | Q(status=Status.STARTED.value))
+        if await sync_to_async(game.count)() == 0:
+            return
+        game = await sync_to_async(game.first)()
+        if game is not None:
+            await sync_to_async(game.leave_game)(user)
+        else:
+            return
+        game_id = self.players.get(f"{user.id}")
         await self.channel_layer.group_discard(
-            f"{prefix}-{self.players[f"{infos_json['id']}"]}",
+            f"{prefix}-{game_id}",
             self.channel_name
         )
+        self.players.pop(f"{user.id}")
+        self.games.pop(f"{game_id}")
+        return super().disconnect(close_code)
 
-        del self.players[f"{infos_json['id']}"]
-        del self.games[f"{stopped_game.get('id')}"]
-
-        return super().disconnect(code)
+    async def game_loop(self, event):
+        game = event['game']
+        game_id = game['id']
+        while self.games.get(f"{game_id}") is not None and self.games[f"{game_id}"]["status"] != Status.FINISHED.value:
+            if game['status'] == Status.STARTED.value:
+                self.games[f"{game_id}"] = game
+                await self.channel_layer.group_send(
+                    self.room_group_name,
+                    {
+                        "type": "game_infos",
+                        "action": "updated",
+                        "game": self.games[f"{game_id}"]
+                    }
+                )
+                await asyncio.sleep(0.05)
+                self.games[f"{game_id}"]["ball"]["x"] += self.games[f"{game_id}"]["ball"]["dx"]
+                if self.games[f"{game_id}"]["ball"]["x"] + self.BALL_RADIUS > self.games[f"{game_id}"]["player2"]["x"] - self.PADDLE_WIDTH:
+                    if self.games[f"{game_id}"]["ball"]["y"] > self.games[f"{game_id}"]["player2"]["y"] - (self.PADDLE_HEIGHT / 2) and self.games[f"{game_id}"]["ball"]["y"] < self.games[f"{game_id}"]["player2"]["y"] + (self.PADDLE_HEIGHT / 2):
+                        self.games[f"{game_id}"]["ball"]["dx"] *= -1
+                elif self.games[f"{game_id}"]["ball"]["x"] - self.BALL_RADIUS < self.games[f"{game_id}"]["player1"]["x"] + self.PADDLE_WIDTH:
+                    if self.games[f"{game_id}"]["ball"]["y"] > self.games[f"{game_id}"]["player1"]["y"] - (self.PADDLE_HEIGHT / 2) and self.games[f"{game_id}"]["ball"]["y"] < self.games[f"{game_id}"]["player1"]["y"] + (self.PADDLE_HEIGHT / 2):
+                        self.games[f"{game_id}"]["ball"]["dx"] *= -1
+            elif game['status'] == Status.FINISHED.value:
+                await self.channel_layer.group_send(
+                    self.room_group_name,
+                    {
+                        "type": "game_infos",
+                        "action": "finished",
+                        "game": self.games[f"{game_id}"]
+                    }
+                )
+                await self.channel_layer.group_discard(
+                    self.room_group_name,
+                    self.channel_name
+                )
+                self.players.pop(f"{game['player1']['id']}")
+                self.players.pop(f"{game['player2']['id']}")
+                self.games.pop(f"{game_id}")
