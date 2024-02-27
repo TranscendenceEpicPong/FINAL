@@ -25,6 +25,9 @@ def CustomAuthenticationMiddleware(get_response):
         except jwt.PyJWTError:
             return HttpResponse("Wrong token", status=401)
 
+        if token.get('a2f_enabled') and not token.get('a2f_verified'):
+            return HttpResponse("2FA required", status=402)
+
         response: HttpResponse = get_response(request)
 
         return response
