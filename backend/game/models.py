@@ -44,4 +44,3 @@ class Game(models.Model):
         self.winner = user
         self.status = Status.FINISHED.value
         self.save()
-        return self.winner
