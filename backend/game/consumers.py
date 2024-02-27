@@ -15,6 +15,7 @@ import copy
 from django.contrib.auth import get_user_model
 import base64
 import math
+import random
 
 prefix = "game"
 
@@ -228,14 +229,15 @@ class GameConsumer(AsyncWebsocketConsumer):
                 await sync_to_async(self.move_ball)(game_id)
                 await sync_to_async(self.check_ball_touch_paddle_player1)(game_id)
                 await sync_to_async(self.check_ball_touch_paddle_player2)(game_id)
+                await sync_to_async(self.check_ball_touch_wall)(game_id)
                 current_game = await sync_to_async(Game.objects.get)(id=game_id)
                 winner = await sync_to_async(current_game.get_the_winner)()
                 if winner is not None:
                     await sync_to_async(current_game.set_winner)(winner)
-                    game['status'] = current_game.status
-                    game['winner'] = winner.id
+                    self.games[f"{game_id}"]['status'] = current_game.status
+                    self.games[f"{game_id}"]['winner'] = winner.id
 
-            elif game['status'] == Status.FINISHED.value:
+            if game['status'] == Status.FINISHED.value:
                 await self.channel_layer.group_send(
                     self.room_group_name,
                     {
@@ -260,9 +262,22 @@ class GameConsumer(AsyncWebsocketConsumer):
         if self.games[f"{game_id}"]["ball"]["x"] - self.BALL_RADIUS < self.games[f"{game_id}"]["player1"]["x"] + self.PADDLE_WIDTH:
             if self.games[f"{game_id}"]["ball"]["y"] > self.games[f"{game_id}"]["player1"]["y"] - (self.PADDLE_HEIGHT / 2) and self.games[f"{game_id}"]["ball"]["y"] < self.games[f"{game_id}"]["player1"]["y"] + (self.PADDLE_HEIGHT / 2):
                 self.games[f"{game_id}"]["ball"]["dx"] *= -1
-                collidePoint = self.games[f"{game_id}"]["ball"]["y"] - (self.PADDLE_HEIGHT / 2)
-                angleRad = (3.14 / 4) * collidePoint
-                # self.games[f"{game_id}"]["ball"]["dy"] = math.sin(angleRad) * 5
+                ball_y = self.games[f"{game_id}"]["ball"]["y"]
+                player_y = self.games[f"{game_id}"]["player1"]["y"]
+                top_player_y = player_y - (self.PADDLE_HEIGHT / 2)
+                bottom_player_y = player_y + (self.PADDLE_HEIGHT / 2)
+                if ball_y < player_y:
+                    diff_player_ball = ball_y - player_y
+                    diff_player_top = player_y - top_player_y
+                    self.games[f"{game_id}"]["ball"]["dy"] = (diff_player_ball / diff_player_top) * 2 * self.games[f"{game_id}"]["ball"]["dx"]
+                    self.games[f"{game_id}"]["ball"]["dy"] *= 1
+                elif ball_y > player_y:
+                    diff_player_ball = ball_y - player_y
+                    diff_player_bottom = player_y - bottom_player_y
+                    self.games[f"{game_id}"]["ball"]["dy"] = (diff_player_ball / diff_player_bottom) * 2 * self.games[f"{game_id}"]["ball"]["dx"]
+                    self.games[f"{game_id}"]["ball"]["dy"] *= -1
+                else:
+                    self.games[f"{game_id}"]["ball"]["dy"] *= 0
             else:
                 self.games[f"{game_id}"]["player2"]["score"] += 1
                 self.games[f"{game_id}"]["player_scored"] = self.games[f"{game_id}"]["player2"]["id"]
@@ -274,9 +289,22 @@ class GameConsumer(AsyncWebsocketConsumer):
         if self.games[f"{game_id}"]["ball"]["x"] + self.BALL_RADIUS > self.games[f"{game_id}"]["player2"]["x"] - self.PADDLE_WIDTH:
             if self.games[f"{game_id}"]["ball"]["y"] > self.games[f"{game_id}"]["player2"]["y"] - (self.PADDLE_HEIGHT / 2) and self.games[f"{game_id}"]["ball"]["y"] < self.games[f"{game_id}"]["player2"]["y"] + (self.PADDLE_HEIGHT / 2):
                 self.games[f"{game_id}"]["ball"]["dx"] *= -1
-                original_touch = self.games[f"{game_id}"]["ball"]["y"] - self.games[f"{game_id}"]["player2"]["y"]
-                print(original_touch)
-                # self.games[f"{game_id}"]["ball"]["dy"] = math.sin(angleRad) * 5
+                ball_y = self.games[f"{game_id}"]["ball"]["y"]
+                player_y = self.games[f"{game_id}"]["player2"]["y"]
+                top_player_y = player_y - (self.PADDLE_HEIGHT / 2)
+                bottom_player_y = player_y + (self.PADDLE_HEIGHT / 2)
+                if ball_y < player_y:
+                    diff_player_ball = ball_y - player_y
+                    diff_player_top = player_y - top_player_y
+                    self.games[f"{game_id}"]["ball"]["dy"] = (diff_player_ball / diff_player_top) * 2 * self.games[f"{game_id}"]["ball"]["dx"]
+                    self.games[f"{game_id}"]["ball"]["dy"] *= -1
+                elif ball_y > player_y:
+                    diff_player_ball = ball_y - player_y
+                    diff_player_bottom = player_y - bottom_player_y
+                    self.games[f"{game_id}"]["ball"]["dy"] = (diff_player_ball / diff_player_bottom) * 2 * self.games[f"{game_id}"]["ball"]["dx"]
+                    self.games[f"{game_id}"]["ball"]["dy"] *= 1
+                else:
+                    self.games[f"{game_id}"]["ball"]["dy"] *= 0
             else:
                 self.games[f"{game_id}"]["player1"]["score"] += 1
                 self.games[f"{game_id}"]["player_scored"] = self.games[f"{game_id}"]["player1"]["id"]
@@ -284,10 +312,15 @@ class GameConsumer(AsyncWebsocketConsumer):
                 game.player_score(game.player1)
                 self.reset_by_score(game_id)
 
+    def check_ball_touch_wall(self, game_id):
+        if self.games[f"{game_id}"]["ball"]["y"] - self.BALL_RADIUS < 0 or self.games[f"{game_id}"]["ball"]["y"] + self.BALL_RADIUS > 400:
+            self.games[f"{game_id}"]["ball"]["dy"] *= -1
+
     def reset_by_score(self, game_id):
         dx = self.games[f"{game_id}"]["ball"]["dx"]
         self.games[f"{game_id}"]["ball"] = copy.deepcopy(self.games[0]["ball"])
         self.games[f"{game_id}"]["ball"]["dx"] = dx * -1
+        self.games[f"{game_id}"]["ball"]["dy"] = random.random() * random.choice([-1, 1]) * self.games[f"{game_id}"]["ball"]["dx"]
         self.games[f"{game_id}"]["player1"]['x'] = copy.deepcopy(self.games[0]["player1"]['x'])
         self.games[f"{game_id}"]["player1"]['y'] = copy.deepcopy(self.games[0]["player1"]['y'])
         self.games[f"{game_id}"]["player2"]['x'] = copy.deepcopy(self.games[0]["player2"]['x'])
