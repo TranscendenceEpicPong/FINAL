@@ -60,6 +60,7 @@ def login(request):
     response, _ = perform_auth(request, form.cleaned_data)
     return response
 
+
 @require_POST
 def register(request):
     try:

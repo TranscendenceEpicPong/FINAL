@@ -168,7 +168,7 @@ STATIC_URL = 'static/'
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 SESSION_ENGINE = "django.contrib.sessions.backends.db"
-SESSION_COOKIE_AGE = 3600000
+SESSION_COOKIE_AGE = 3600
 
 AUTH_USER_MODEL = 'core.EpicPongUser'
 
