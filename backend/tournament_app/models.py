@@ -276,11 +276,14 @@ class Match(models.Model):
 
 
 class RegistrationTournament(models.Model):
-    user = models.ForeignKey(get_user_model(), on_delete=models.CASCADE)
+    user = models.ForeignKey(get_user_model(),
+                             on_delete=models.CASCADE)
     tournament = models.ForeignKey(Tournament,
                                    on_delete=models.CASCADE,
                                    related_name='participants')
-    alias = models.CharField(max_length=50)
+    alias = models.CharField(max_length=50,
+                             null=True,
+                             blank=False)
     is_creator = models.BooleanField(default=False)
     is_active = models.BooleanField(default=True)
     points = models.PositiveIntegerField(default=0)

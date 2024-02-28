@@ -4,11 +4,19 @@ from django.urls import reverse
 from core.models import EpicPongUser
 
 
+class ParticipantSerializer(serializers.ModelSerializer):
+    user = serializers.SlugRelatedField(read_only=True, slug_field='username')
+
+    class Meta:
+        model = RegistrationTournament
+        fields = ["user", "alias"]
+        read_only_fields = ["is_active"]
+
+
 class TournamentSerializer(serializers.ModelSerializer):
     creator = serializers.SerializerMethodField()
-    participants = serializers.SerializerMethodField()
+    participants = ParticipantSerializer(many=True)
     number_of_participants = serializers.SerializerMethodField(read_only=True)
-    ranking = serializers.SerializerMethodField(read_only=True)
     is_open = serializers.BooleanField()
     matches = serializers.SerializerMethodField(read_only=True)
 
@@ -16,8 +24,8 @@ class TournamentSerializer(serializers.ModelSerializer):
         model = Tournament
         fields = [
             'id', 'name', 'creator', 'participants',
-            'number_of_participants', 'ranking',
-            'is_open', 'matches', 'phase'
+            'number_of_participants', 'is_open',
+            'matches', 'phase'
         ]
 
     def get_creator(self, tournament):
@@ -28,31 +36,6 @@ class TournamentSerializer(serializers.ModelSerializer):
             'alias': creator.alias
         }
         return creator_info
-
-    def get_participants(self, tournament):
-        participants_info = []
-        for registration in tournament.participants.all():
-            participant_info = {
-                'id': registration.user.id,
-                'username': registration.user.username,
-                'alias': registration.alias,
-            }
-            participants_info.append(participant_info)
-        return participants_info
-
-    def get_ranking(self, tournament):
-        ranking = tournament.get_ranking_dict()
-        ranking_info = []
-        for rank, user in enumerate(ranking, start=1):
-            ranking_info.append({
-                "rank": rank,
-                "username": user["user"].username,
-                "alias": user["alias"],
-                "points": user["points"],
-                "goal_average": user["goal_average"],
-                "goal_conceded": user["goal_conceded"]
-            })
-        return ranking_info
 
     def get_matches(self, tournament):
         matches_info = []
@@ -81,4 +64,3 @@ class TournamentSerializer(serializers.ModelSerializer):
 
     def get_number_of_participants(self, tournament):
         return tournament.participants.count()
-

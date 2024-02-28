@@ -1,10 +1,13 @@
 import json
 import random
+from typing import List
 
 from django.contrib.auth import get_user_model
 from django.test import TestCase
 
+from core.models import EpicPongUser
 from tournament_app.models import Tournament, RegistrationTournament
+from tournament_app.serializers import TournamentSerializer
 from tournament_app.utils import update_tournament_results
 
 
@@ -136,3 +139,21 @@ class ScoreTest(TestCase):
 
         self.tournament.update_tournament_results()
         self.assertNotEqual(base_first, self.tournament.ranking.first())
+
+
+class TournamentSerializerTests(TestCase):
+    def setUp(self):
+        self.users: List[EpicPongUser] = [
+            get_user_model().objects.create_user({
+                "username": f"user{i}"
+            }) for i in range(8)
+        ]
+
+    def test_valid_tournament_data(self):
+        serializer = TournamentSerializer(data={
+            "name": "Tournament",
+            "participants": [{
+                "user": user.username,
+            } for user in self.users]
+        })
+        self.assertTrue(serializer.is_valid())
