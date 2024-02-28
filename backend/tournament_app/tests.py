@@ -141,14 +141,15 @@ class ScoreTest(TestCase):
         self.assertNotEqual(base_first, self.tournament.ranking.first())
 
     def test_matchmaking(self):
-        for index, participant in enumerate(self.tournament.participants):
+        participants = self.tournament.participants.all()
+        for index, participant in enumerate(participants):
             participant.points = index
 
         self.tournament.start_next_phase()
 
         match = self.tournament.current_matches[0]
-        self.assertEqual(match.player1, self.tournament.participants[0].user)
-        self.assertEqual(match.player2, self.tournament.participants[7].user)
+        self.assertEqual(match.player1, participants[0].user)
+        self.assertEqual(match.player2, participants[7].user)
 
 
 class TournamentSerializerTests(TestCase):
