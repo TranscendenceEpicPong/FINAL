@@ -17,7 +17,6 @@ class TournamentSerializer(serializers.ModelSerializer):
     creator = serializers.SerializerMethodField()
     participants = ParticipantSerializer(many=True)
     number_of_participants = serializers.SerializerMethodField(read_only=True)
-    is_open = serializers.BooleanField()
     matches = serializers.SerializerMethodField(read_only=True)
 
     class Meta:
