@@ -29,8 +29,8 @@ class Tournament(models.Model):
         FINAL_PHASE = 'final'
 
     name = models.CharField(max_length=50)
-    is_open = models.BooleanField(default=True)
-    max_participants = models.PositiveIntegerField(default=20)
+    # is_open = models.BooleanField(default=True)
+    # max_participants = models.PositiveIntegerField(default=20)
     phase = models.CharField(choices=Phases,
                              default=Phases.NOT_STARTED)
 
@@ -283,7 +283,7 @@ class RegistrationTournament(models.Model):
                              null=True,
                              blank=False)
     is_creator = models.BooleanField(default=False)
-    is_active = models.BooleanField(default=True)
+    is_active = models.BooleanField(default=False)
     points = models.PositiveIntegerField(default=0)
     goal_average = models.IntegerField(default=0)
     goal_conceded = models.PositiveBigIntegerField(default=0)

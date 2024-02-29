@@ -11,7 +11,14 @@ class ParticipantSerializer(serializers.ModelSerializer):
     class Meta:
         model = RegistrationTournament
         fields = ["user", "alias"]
-        read_only_fields = ["is_active"]
+        read_only_fields = ["is_active", "is_creator"]
+
+    def update(self, instance, validated_data):
+        instance.alias = validated_data.get('alias', instance.alias)
+        if instance.alias and instance.tournament.phase == Tournament.Phases.NOT_STARTED:
+            instance.is_active = True
+        instance.save()
+        return instance
 
 
 class TournamentSerializer(serializers.ModelSerializer):

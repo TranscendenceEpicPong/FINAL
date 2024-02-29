@@ -172,7 +172,7 @@ class TournamentSerializerTests(TestCase):
 
     def test_participant_serializer(self):
         serializer = ParticipantSerializer(data={
-            "user": self.users[0].username
+            "user": self.users[0].username,
         })
         valid = serializer.is_valid()
         self.assertTrue(valid)
