@@ -70,6 +70,7 @@ INSTALLED_APPS = [
     'friends',
     'blocks',
     'backend',
+    'chats',
     'core',
     'authentication',
 ]

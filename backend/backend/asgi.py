@@ -13,6 +13,7 @@ from django.core.asgi import get_asgi_application
 from channels.routing import ProtocolTypeRouter, URLRouter
 from friends import routing as friend_routing
 from blocks import routing as block_routing
+from chats import routing as chat_routing
 
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'backend.settings')
 
@@ -23,6 +24,7 @@ application = ProtocolTypeRouter({
     "websocket": 
         URLRouter([
             *friend_routing.websocket_urlpatterns,
-            *block_routing.websocket_urlpatterns
+            *block_routing.websocket_urlpatterns,
+            *chat_routing.websocket_urlpatterns
         ])
 })

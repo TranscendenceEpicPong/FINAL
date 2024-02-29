@@ -1,6 +1,7 @@
 from .status import StatusAdding, StatusRemoving
 from .models import Blocks
 from friends.models import Friends
+from chats.models import Chats
 
 class BlockService:
     def __init__(self, owner):
@@ -28,6 +29,9 @@ class BlockService:
 
         Friends.objects.filter(user=self.__owner, friend=user).delete()
         Friends.objects.filter(user=user, friend=self.__owner).delete()
+
+        Chats.objects.filter(sender=self.__owner, receiver=user).delete()
+        Chats.objects.filter(sender=user, receiver=self.__owner).delete()
 
         Blocks.objects.create(user=self.__owner, block=user)
         return StatusAdding.SUCCESS_BLOCKING.value

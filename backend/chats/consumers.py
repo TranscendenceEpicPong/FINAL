@@ -1,12 +1,15 @@
 import json
 from channels.generic.websocket import WebsocketConsumer
 from asgiref.sync import async_to_sync
+import base64
+from urllib.parse import unquote
 import jwt
 from backend.settings import env
-from blocks.service import BlockService
+from friends.service import FriendService
 from core.models import EpicPongUser
+from .models import Chats
 
-prefix = "blocks"
+prefix = "chats"
 
 def decode_query_string(query_string):
     try:
@@ -15,7 +18,7 @@ def decode_query_string(query_string):
     except jwt.ExpiredSignatureError:
         return None
 
-class BlockConsumer(WebsocketConsumer):
+class ChatConsumer(WebsocketConsumer):
     def connect(self):
         infos_json = decode_query_string(self.scope['query_string'])
         if infos_json is None:
@@ -31,7 +34,7 @@ class BlockConsumer(WebsocketConsumer):
     def receive(self, text_data):
         infos_json = decode_query_string(self.scope['query_string'])
         owner = EpicPongUser.objects.get(id=infos_json['id'])
-        service = BlockService(owner)
+        friends = FriendService(owner)
         try:
             text_data_json = json.loads(text_data)
         except Exception:
@@ -40,39 +43,50 @@ class BlockConsumer(WebsocketConsumer):
                 'message':'Données invalides'
             }))
             return
+
+        name = infos_json.get('username')
         username = text_data_json.get('username')
+        message = text_data_json.get('message')
+
+        if not message or not username:
+            self.send(text_data=json.dumps({
+                'type':'error',
+                'message':"Message ou nom d'utilisateur manquant"
+            }))
+            return
+
         try:
             user = EpicPongUser.objects.get(username=username)
         except EpicPongUser.DoesNotExist:
             self.send(text_data=json.dumps({
                 'type':'error',
+                'sender': name,
+                'receiver': username,
                 'message':'Utilisateur introuvable'
             }))
             return
 
-        if text_data_json['action'] == 'add':
-            status = service.add_block(user)
-        elif text_data_json['action'] == 'delete':
-            status = service.delete_block(user)
-        else:
+        if owner.id == user.id:
             self.send(text_data=json.dumps({
                 'type':'error',
-                'message':'Action inconnue'
+                'sender': name,
+                'receiver': username,
+                'message':"Vous ne pouvez pas vous envoyer de message à vous même"
             }))
             return
 
-        name = infos_json['username']
-        if status['status'] < 200 or status['status'] >= 300:
+        if not friends.is_friend(user.id):
             self.send(text_data=json.dumps({
                 'type':'error',
-                'message':status['message']
+                'sender': name,
+                'receiver': username,
+                'message': "Vous n'êtes pas amis avec cet utilisateur"
             }))
             return
 
         data_to_send = {
-            'type':'block_message',
-            'message': status['message'],
-            "status": status['status'],
+            'type':'chat_message',
+            'content': message,
             "sender": {
                 "username": owner.username,
                 "avatar": owner.avatar,
@@ -81,7 +95,6 @@ class BlockConsumer(WebsocketConsumer):
                 "username": user.username,
                 "avatar": user.avatar,
             },
-            'action': text_data_json['action']
         }
 
         async_to_sync(self.channel_layer.group_send)(
@@ -94,9 +107,21 @@ class BlockConsumer(WebsocketConsumer):
             data_to_send
         )
 
-    def block_message(self, event):
-        event['type'] = 'block'
-        self.send(text_data=json.dumps(event))
+        sender = EpicPongUser.objects.get(id=infos_json['id'])
+        receiver = EpicPongUser.objects.get(username=text_data_json.get('username'))
+
+        Chats.objects.create(sender=sender, receiver=receiver, content=message)
+
+    def chat_message(self, event):
+        message = event['content']
+        sender = event['sender']
+        receiver = event['receiver']
+
+        self.send(text_data=json.dumps({
+            'content':message,
+            'sender': sender,
+            'receiver': receiver
+        }))
 
     def disconnect(self, code):
         return super().disconnect(code)

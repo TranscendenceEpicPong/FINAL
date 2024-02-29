@@ -48,8 +48,11 @@ class FriendConsumer(WebsocketConsumer):
                 'message':'Données invalides'
             }))
             return
+
+        username = text_data_json.get('username')
+
         try:
-            user = EpicPongUser.objects.get(username=text_data_json['username'])
+            user = EpicPongUser.objects.get(username=username)
         except EpicPongUser.DoesNotExist:
             self.send(text_data=json.dumps({
                 'type':'error',
@@ -57,9 +60,10 @@ class FriendConsumer(WebsocketConsumer):
             }))
             return
 
-        if text_data_json['action'] in ['add', 'accept']:
+        action = text_data_json.get('action')
+        if action in ['add', 'accept']:
             status = service.add_friend(user)
-        elif text_data_json['action'] == 'delete':
+        elif action == 'delete':
             status = service.delete_friend(user)
         else:
             self.send(text_data=json.dumps({
@@ -73,7 +77,7 @@ class FriendConsumer(WebsocketConsumer):
                 'type':'error',
                 'message':status['message'],
                 "sender": name,
-                "receiver": text_data_json['username']
+                "receiver": username
             }))
             return
 
@@ -89,7 +93,7 @@ class FriendConsumer(WebsocketConsumer):
                 "username": user.username,
                 "avatar": user.avatar,
             },
-            "action": text_data_json['action']
+            "action": action
         }
 
         async_to_sync(self.channel_layer.group_send)(
