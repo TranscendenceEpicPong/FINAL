@@ -27,6 +27,7 @@ def create_token(user: EpicPongUser, a2f_verified: bool) -> str:
         'exp': datetime.datetime.now() + datetime.timedelta(days=1)
     }, env('JWT_SECRET'))
 
+
 def perform_auth(request, creds) -> Tuple[JsonResponse, EpicPongUser]:
     user = django_authenticate(request,
                                username=creds['username'],
@@ -119,6 +120,7 @@ def enable_2fa(request):
                         samesite='Strict')
 
     return response
+
 
 @require_POST
 def disable_2fa(request):
