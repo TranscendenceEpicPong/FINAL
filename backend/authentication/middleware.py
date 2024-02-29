@@ -17,16 +17,14 @@ def CustomAuthenticationMiddleware(get_response):
         authorization = request.COOKIES.get('authorization')
         if not authorization:
             return HttpResponse("Missing token", status=401)
-        # sessionId = request.COOKIES.get('sessionid')
-        # session_key = request.session.session_key
 
         try:
             token = jwt.decode(authorization, env('JWT_SECRET'), algorithms=['HS256'])
         except jwt.PyJWTError:
             return HttpResponse("Wrong token", status=401)
 
-        if token.get('a2f_enabled') and not token.get('a2f_verified'):
-            return HttpResponse("2FA required", status=402)
+        if token.get('a2f_enabled') and not token.get('a2f_verified') and not (request.path in settings.UNAUTHENTICATED_2FA_REQUESTS):
+            return HttpResponse("2FA required", status=401)
 
         response: HttpResponse = get_response(request)
 

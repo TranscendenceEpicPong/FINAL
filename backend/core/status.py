@@ -38,6 +38,6 @@ class A2FStatus(Enum):
     NOT_ACTIVATED = { "message": "La 2FA n'est pas activée", "status": 400 }
     SUCCESS_ACTIVATED = { "message": "La 2FA a été activée avec succès", "status": 200 }
     SUCCESS_DEACTIVATED = { "message": "La 2FA a été désactivée avec succès", "status": 200 }
-    WRONG_CODE = { "message": "Le code est incorrect", "status": 401 }
-    WRONG_PASSWORD = { "message": "Le mot de passe est incorrect", "status": 401 }
+    WRONG_CODE = { "message": "Le code est incorrect", "status": 403 }
+    WRONG_PASSWORD = { "message": "Le mot de passe est incorrect", "status": 403 }
     VALIDATED = { "message": "Code correct", "status": 200 }

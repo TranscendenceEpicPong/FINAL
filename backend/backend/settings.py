@@ -33,6 +33,7 @@ CORS_ALLOW_HEADERS = [*default_headers, 'X-CSRFToken']
 CORS_ALLOW_CREDENTIALS = True
 
 UNAUTHENTICATED_REQUESTS = ['/authentication/login', '/authentication/register', '/server_info/']
+UNAUTHENTICATED_2FA_REQUESTS = ['/authentication/check-code','/authentication/logout']
 
 CSRF_TRUSTED_ORIGINS = ["http://localhost:8080", "http://localhost:8000"]
 CSRF_COOKIE_DOMAIN = "localhost"
