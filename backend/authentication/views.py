@@ -96,7 +96,7 @@ def logout(request):
 @require_http_methods('GET')
 def request_code(request):
     user = cast(EpicPongUser, request.user)
-    return get_response({**user.request_code(), "status": 200}, True)
+    return get_response({**user.request_code(), "status": 200})
 
 
 @require_POST
@@ -105,11 +105,11 @@ def enable_2fa(request):
     try:
         raw_data = json.loads(request.body)
     except json.JSONDecodeError:
-        return get_response({"message": "Invalid JSON", "status": 400}, True)
+        return get_response({"message": "Invalid JSON", "status": 400})
 
     activated_2fa =  user.activate_2fa(raw_data.get('code'))
     if activated_2fa != A2FStatus.SUCCESS_ACTIVATED.value:
-        return get_response(activated_2fa, True)
+        return get_response(activated_2fa)
 
     token = create_token(user, activated_2fa == A2FStatus.SUCCESS_ACTIVATED.value)
 
@@ -128,11 +128,11 @@ def disable_2fa(request):
     try:
         raw_data = json.loads(request.body)
     except json.JSONDecodeError:
-        return get_response({"message": "Invalid JSON", "status": 400}, True)
+        return get_response({"message": "Invalid JSON", "status": 400})
 
     disable_2fa =  user.deactivate_2fa(raw_data.get('password'))
     if disable_2fa != A2FStatus.SUCCESS_DEACTIVATED.value:
-        return get_response(disable_2fa, True)
+        return get_response(disable_2fa)
 
     token = create_token(user, disable_2fa == A2FStatus.SUCCESS_DEACTIVATED.value)
 
@@ -151,11 +151,11 @@ def check_code(request):
     try:
         raw_data = json.loads(request.body)
     except json.JSONDecodeError:
-        return get_response({"message": "Invalid JSON", "status": 400}, True)
+        return get_response({"message": "Invalid JSON", "status": 400})
 
     validated_2fa =  user.check_code(raw_data.get('code'))
     if validated_2fa != A2FStatus.VALIDATED.value:
-        return get_response(validated_2fa, True)
+        return get_response(validated_2fa)
 
     token = create_token(user, validated_2fa == A2FStatus.VALIDATED.value)
 
