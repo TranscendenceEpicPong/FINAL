@@ -5,7 +5,8 @@ from core.models import EpicPongUser
 
 
 class ParticipantSerializer(serializers.ModelSerializer):
-    user = serializers.SlugRelatedField(read_only=True, slug_field='username')
+    user = serializers.SlugRelatedField(slug_field='username',
+                                        queryset=get_user_model().objects.all())
 
     class Meta:
         model = RegistrationTournament
@@ -26,6 +27,14 @@ class TournamentSerializer(serializers.ModelSerializer):
             'number_of_participants', 'is_open',
             'matches', 'phase'
         ]
+
+    def create(self, validated_data):
+        participants = validated_data.pop('participants')
+        tournament = Tournament(**validated_data)
+        tournament.save()
+        for participant in participants:
+            tournament.participants.create(**participant)
+        return tournament
 
     def get_creator(self, tournament):
         creator: RegistrationTournament = tournament.creator

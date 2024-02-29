@@ -7,7 +7,7 @@ from django.test import TestCase
 
 from core.models import EpicPongUser
 from tournament_app.models import Tournament, RegistrationTournament
-from tournament_app.serializers import TournamentSerializer
+from tournament_app.serializers import TournamentSerializer, ParticipantSerializer
 from tournament_app.utils import update_tournament_results
 
 
@@ -154,10 +154,11 @@ class ScoreTest(TestCase):
 
 class TournamentSerializerTests(TestCase):
     def setUp(self):
+        self.num_participants = 8
         self.users: List[EpicPongUser] = [
             get_user_model().objects.create_user({
                 "username": f"user{i}"
-            }) for i in range(8)
+            }) for i in range(self.num_participants)
         ]
 
     def test_valid_tournament_data(self):
@@ -168,3 +169,28 @@ class TournamentSerializerTests(TestCase):
             } for user in self.users]
         })
         self.assertTrue(serializer.is_valid())
+
+    def test_participant_serializer(self):
+        serializer = ParticipantSerializer(data={
+            "user": self.users[0].username
+        })
+        valid = serializer.is_valid()
+        self.assertTrue(valid)
+        self.assertEqual(serializer.validated_data["user"], self.users[0])
+
+    def test_create_tournament(self):
+        name = "Tournament"
+        serializer = TournamentSerializer(data={
+            "name": name,
+            "participants": [{
+                "user": user.username,
+            } for user in self.users]
+        })
+        serializer.is_valid()
+        tournament = serializer.save()
+
+        # Assert that the tournament is saved properly
+        self.assertFalse(tournament._state.adding)
+        self.assertEqual(tournament.name, name)
+        self.assertEqual(tournament.participants.count(),
+                         self.num_participants)
