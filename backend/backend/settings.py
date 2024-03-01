@@ -23,7 +23,7 @@ env = environ.Env(
     DB_HOST=(str, '127.0.0.1'),
     DB_PORT=(str, '5432'),
     MYPY_DJANGO_CONFIG=(str, './mypy.ini'),
-    CORS_ALLOWED_ORIGINS=(list, ["http://localhost:8080", "http://localhost", "http://10.0.0.3:8080", "http://10.0.0.3:8000", "http://localhost:8080", "http://localhost:8000"]),
+    CORS_ALLOWED_ORIGINS=(list, ["http://localhost:8080", "http://localhost", "http://10.0.0.3:8080", "http://10.0.0.3:8000", "http://10.0.0.3:8080", "http://10.0.0.3:8000"]),
     JWT_SECRET=(str, 'SECRET'),
     APP_NAME=(str, 'EpicPong'),
 )
@@ -34,8 +34,8 @@ CORS_ALLOW_CREDENTIALS = True
 
 UNAUTHENTICATED_REQUESTS = ['/authentication/login', '/authentication/register', '/server_info/']
 
-CSRF_TRUSTED_ORIGINS = ["http://localhost:8080", "http://localhost:8000", "http://10.0.0.3:8080", "http://10.0.0.3:8000", "http://localhost:8000", "http://localhost:8080"]
-CSRF_COOKIE_DOMAIN = "localhost"
+CSRF_TRUSTED_ORIGINS = ["http://localhost:8080", "http://localhost:8000", "http://10.0.0.3:8080", "http://10.0.0.3:8000", "http://10.0.0.3:8000", "http://10.0.0.3:8080"]
+CSRF_COOKIE_DOMAIN = "10.0.0.3"
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
