@@ -4,36 +4,37 @@ from typing import List
 
 from django.contrib.auth import get_user_model
 from django.test import TestCase
+from rest_framework.test import APITestCase
 
 from core.models import EpicPongUser
 from tournament_app.models import Tournament, RegistrationTournament
 from tournament_app.serializers import TournamentSerializer, ParticipantSerializer
-from tournament_app.utils import update_tournament_results
 
 
-# Create your tests here.
-class TournamentsTestCase(TestCase):
-    def setUp(self):
-        name = "test"
-        max_participants = 8
+def create_tournament(number_participants: int, tournament_name: str = "Tournament"):
+    tournament = Tournament.objects.create(name=tournament_name)
 
-        first_user, created = get_user_model().objects.get_or_create(username='user1')
-        if created:
-            first_user.set_password('')
-            first_user.save()
-
-        self.tournament = Tournament.objects.create(
-            name=name,
-            max_participants=max_participants,
+    for i in range(number_participants):
+        tournament.participants.create(
+            user=get_user_model().objects.create_user(
+                username=f'user{i}'
+            )
         )
 
-        for i in range(1, max_participants + 1):
-            username = f'user{i}'
-            alias = f'alias_user{i}'
+    # tournament.participants.add([
+    #     RegistrationTournament.objects.create(user=user) for user in [
+    #         get_user_model().objects.create_user(username=f'user{i}')
+    #         for i in range(number_participants)
+    #     ]
+    # ])
 
-            user, created = get_user_model().objects.get_or_create(username=username)
+    return tournament
 
-            RegistrationTournament.objects.create(user=user, tournament=self.tournament, alias=alias)
+
+class TournamentsBaseTest(TestCase):
+    def setUp(self):
+        self.tournament = create_tournament(8)
+        self.tournament_path = f"/tournaments/{self.tournament.id}/"
 
         creds = {
             "username": "john",
@@ -46,9 +47,45 @@ class TournamentsTestCase(TestCase):
 
         self.client.post('/authentication/login', json.dumps(creds), content_type='application/json')
 
-    def test_get_tournament(self):
-        response = self.client.get(f"/tournaments/{self.tournament.id}/")
-        self.assertEqual(response.status_code, 200)
+
+# Create your tests here.
+class TournamentsTestCase(TournamentsBaseTest):
+    def test_get_tournament_while_not_registered(self):
+        response = self.client.get(self.tournament_path)
+        self.assertEqual(response.status_code, 403)
+
+
+class TournamentApiTestCase(APITestCase, TournamentsBaseTest):
+
+    def setUp(self):
+        self.tournament = create_tournament(8)
+        self.tournament_path = f"/tournaments/{self.tournament.id}/"
+
+        creds = {
+            "username": "john",
+            "password": "johnpassword"
+        }
+        user = get_user_model().objects.create_user(**creds)
+        self.client.force_authenticate(user=user)
+
+
+        # This doesn't work because we don't have a real authentication backend
+        # self.client.login(**creds)
+
+        # response = self.client.get("/server_info/")
+        # csrf_token = response.cookies.get('csrftoken')
+        # response = self.client.post('/authentication/login', creds, headers={
+        #     "X-CSRFToken": csrf_token.value
+        # })
+        # print(response)
+
+    def test_register_tournament(self):
+        response = self.client.post(f"{self.tournament_path}register")
+        self.assertEqual(response.status_code, 403)
+
+    def test_get_tournament_while_registered(self):
+        response = self.client.get(self.tournament_path)
+        self.assertEqual(response.status_code, 403)
 
 
 class PhasesTestCase(TestCase):
