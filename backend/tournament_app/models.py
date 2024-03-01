@@ -44,7 +44,7 @@ class Tournament(models.Model):
 
     @property
     def ranking(self) -> 'QuerySet[RegistrationTournament]':
-        return self.participants.filter(is_active=True).order_by(
+        return self.active_participants.order_by(
             '-points',
             '-goal_average',
             'goal_conceded',
