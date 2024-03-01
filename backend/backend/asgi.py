@@ -27,5 +27,6 @@ application = ProtocolTypeRouter({
             *friend_routing.websocket_urlpatterns,
             *block_routing.websocket_urlpatterns,
             *game_routing.websocket_urlpatterns,
+            *chat_routing.websocket_urlpatterns
         ])
 })

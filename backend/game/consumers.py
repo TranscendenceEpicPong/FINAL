@@ -7,6 +7,7 @@ from backend.settings import env
 from .service import GameService
 from core.models import EpicPongUser
 from .models import Game
+from .manager import GameManager
 from .status import Status
 from django.db.models import Q
 import asyncio
@@ -29,11 +30,12 @@ def decode_query_string(query_string):
 
 class GameConsumer(AsyncWebsocketConsumer):
     players = {}
-    OBJECTIVE_SCORE = 3
+    OBJECTIVE_SCORE = 100
     PADDLE_HEIGHT = 100
     PADDLE_WIDTH = 10
     BALL_RADIUS = 5
     GAME_SPEED = 0.017
+    tasks = {}
     games = {
         0: {
             "id": 0,
@@ -41,27 +43,27 @@ class GameConsumer(AsyncWebsocketConsumer):
                 "id": 0,
                 "username": "",
                 "score": 0,
-                "x": 20,
+                "x": 10,
                 "y": 200,
-                "color": 'green'
+                "color": '#131316'
             },
             "player2": {
                 "id": 0,
                 "username": "",
                 "score": 0,
-                "x": 580,
+                "x": 790,
                 "y": 200,
-                "color": 'green'
+                "color": '#131316'
             },
             "ball": {
-                "x": 300,
+                "x": 400,
                 "y": 200,
                 "dx": 5,
                 "dy": 0,
             },
             "status": -1,
             "winner": 0,
-            "player_scored": 0
+            "player_scored": 0,
         }
     }
 
@@ -70,7 +72,6 @@ class GameConsumer(AsyncWebsocketConsumer):
         if infos_json is None:
             self.close()
             return
-
         user = await self.get_user(infos_json['id'])
         if user is None:
             self.close()
@@ -98,9 +99,9 @@ class GameConsumer(AsyncWebsocketConsumer):
         if game['player1']['id'] != user.id:
             player = game['player2']
 
-        if data.get('direction') == 'up':
+        if data.get('direction') == 'up' and player['y'] - (self.PADDLE_HEIGHT / 2) > 5:
             player['y'] -= 5
-        if data.get('direction') == 'down':
+        if data.get('direction') == 'down' and player['y'] + (self.PADDLE_HEIGHT / 2) < 395:
             player['y'] += 5
 
         self.games[f"{game_id}"] = game
@@ -120,6 +121,13 @@ class GameConsumer(AsyncWebsocketConsumer):
         return await sync_to_async(user.first)()
 
     async def find_game(self, user):
+        game = await sync_to_async(Game.objects.filter)(Q(player1=user) | Q(player2=user), Q(status=Status.WAITING.value) | Q(status=Status.STARTED.value))
+        if await sync_to_async(game.count)() > 0:
+            await self.send(text_data=json.dumps({
+                'type': 'error',
+                "message": "Vous êtes déjà dans une partie."
+            }))
+            return
         game = await sync_to_async(Game.objects.filter)(player2__isnull=True)
         if await sync_to_async(game.count)() == 0:
             await self.create_game(user)
@@ -170,24 +178,14 @@ class GameConsumer(AsyncWebsocketConsumer):
         )
 
         if player_number == 2:
-            asyncio.create_task(self.game_loop({
+            task = asyncio.create_task(self.game_loop({
                 "game": self.games[f"{game.id}"]
             }))
+            self.tasks[f"{game.id}"] = task
+            print(self.tasks)
 
     async def game_infos(self, event):
         await self.send(text_data=json.dumps(event))
-
-    async def leave_game(self, game, user):
-        if game.player2 is None:
-            await sync_to_async(game.delete)()
-            return
-
-        if game.player1 == user:
-            game.winner = game.player2
-        else:
-            game.winner = game.player1
-        game.status = Status.FINISHED.value
-        await sync_to_async(game.save)()
 
     async def disconnect(self, close_code):
         infos_json = decode_query_string(self.scope['query_string'])
@@ -200,21 +198,34 @@ class GameConsumer(AsyncWebsocketConsumer):
         game = await sync_to_async(game.first)()
         if game is not None:
             await sync_to_async(game.leave_game)(user)
+            self.games[f"{game.id}"]['status'] = game.status
+            self.games[f"{game.id}"]['winner'] = game.winner.id
+            await self.channel_layer.group_send(
+                f"{prefix}-{game.id}",
+                {
+                    "type": "game_infos",
+                    "action": "finished",
+                    "game": self.games[f"{game.id}"]
+                }
+            )
         else:
             return
         game_id = self.players.get(f"{user.id}")
+
         await self.channel_layer.group_discard(
             f"{prefix}-{game_id}",
             self.channel_name
         )
         self.players.pop(f"{user.id}")
         self.games.pop(f"{game_id}")
+        self.tasks.get(f"{game_id}").cancel()
         return super().disconnect(close_code)
 
     async def game_loop(self, event):
         game = event['game']
         game_id = game['id']
         while self.games.get(f"{game_id}") is not None and self.games[f"{game_id}"]["status"] != Status.FINISHED.value:
+            print("game loop")
             if game['status'] == Status.STARTED.value:
                 self.games[f"{game_id}"] = game
                 await self.channel_layer.group_send(
@@ -236,23 +247,24 @@ class GameConsumer(AsyncWebsocketConsumer):
                     await sync_to_async(current_game.set_winner)(winner)
                     self.games[f"{game_id}"]['status'] = current_game.status
                     self.games[f"{game_id}"]['winner'] = winner.id
+        print(f"Game: {self.games.get(f"{game_id}")}, Status: {self.games[f"{game_id}"]['status'] == Status.FINISHED.value}")
 
-            if game['status'] == Status.FINISHED.value:
-                await self.channel_layer.group_send(
-                    self.room_group_name,
-                    {
-                        "type": "game_infos",
-                        "action": "finished",
-                        "game": self.games[f"{game_id}"]
-                    }
-                )
-                await self.channel_layer.group_discard(
-                    self.room_group_name,
-                    self.channel_name
-                )
-                self.players.pop(f"{game['player1']['id']}")
-                self.players.pop(f"{game['player2']['id']}")
-                self.games.pop(f"{game_id}")
+        if self.games.get(f"{game_id}") and self.games[f"{game_id}"]['status'] == Status.FINISHED.value:
+            await self.channel_layer.group_send(
+                self.room_group_name,
+                {
+                    "type": "game_infos",
+                    "action": "finished",
+                    "game": self.games[f"{game_id}"]
+                }
+            )
+            await self.channel_layer.group_discard(
+                self.room_group_name,
+                self.channel_name
+            )
+            self.players.pop(f"{game['player1']['id']}")
+            # self.players.pop(f"{game['player2']['id']}")
+            self.games.pop(f"{game_id}")
 
     def move_ball(self, game_id):
         self.games[f"{game_id}"]["ball"]["x"] += self.games[f"{game_id}"]["ball"]["dx"]

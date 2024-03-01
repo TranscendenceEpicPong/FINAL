@@ -1,6 +1,7 @@
 from django.db import models
 from core.models import EpicPongUser as User
 from .status import Status
+from django.db.models import Q
 
 # Create your models here.
 OBJECTIF_SCORE = 5
