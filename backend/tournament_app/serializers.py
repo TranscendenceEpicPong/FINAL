@@ -28,9 +28,9 @@ class TournamentSerializer(serializers.ModelSerializer):
     participants = ParticipantSerializer(many=True)
     number_of_participants = serializers.SerializerMethodField(read_only=True)
     matches = serializers.SerializerMethodField(read_only=True)
-    current_user = serializers.SerializerMethodField('_user')
 
-    def _user(self, obj):
+    @property
+    def current_user(self):
         request = self.context.get('request', None)
         if request:
             return request.user

@@ -20,15 +20,23 @@ class TournamentViewSet(mixins.CreateModelMixin,
     def get_queryset(self):
         qs: 'QuerySet[Tournament]' = Tournament.objects.all()
         user = self.request.user
-        qs.filter(participants__user=user).distinct()
+        qs = qs.filter(participants__user=user).distinct()
         return qs
 
-    @action(detail=True, methods=['post'], permission_classes=[IsCreator, NotStarted])
+    @action(detail=True,
+            methods=['post'],
+            permission_classes=[*permission_classes,
+                                IsCreator,
+                                NotStarted])
     def launch(self):
         tournament = self.get_object()
 
         serializer = self.get_serializer(tournament)
         serializer.is_valid(raise_exception=True)
+
+        if tournament.active_count < MIN_PARTICIPANTS:
+            return Response(status=status.HTTP_400_BAD_REQUEST,
+                            data={'error': "'You need at least 3 registered participants!"})
 
         tournament.start_next_phase()
         return Response(status=status.HTTP_201_CREATED,
@@ -37,7 +45,10 @@ class TournamentViewSet(mixins.CreateModelMixin,
                             'tournament': serializer.data
                         })
 
-    @action(detail=True, methods=['post'], permission_classes=[NotStarted])
+    @action(detail=True,
+            methods=['post'],
+            permission_classes=[*permission_classes,
+                                NotStarted])
     def register(self, request, pk):
         user: EpicPongUser = request.user
         data = json.loads(request.body)
@@ -47,7 +58,15 @@ class TournamentViewSet(mixins.CreateModelMixin,
         data['user'] = user.username
 
         tournament: Tournament = self.get_object()
-        participant = tournament.participants.get(user=user)
+
+        try:
+            participant = tournament.participants.get(user=user)
+        # except RegistrationTournament.DoesNotExist:
+            # It is already handled in IsParticipant permission
+        except RegistrationTournament.MultipleObjectsReturned:
+            return Response(status=status.HTTP_400_BAD_REQUEST,
+                            data={'error': "'You can't register more than once!"})
+
         participant.is_active = True
         serializer = ParticipantSerializer(data=data,
                                            instance=participant)
