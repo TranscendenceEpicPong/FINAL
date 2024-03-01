@@ -87,8 +87,8 @@ class TournamentApiTestCase(APITestCase):
                     "user": f"user{i}"
                 } for i in range(1, 8)
             ], {
-                                 "user": self.user.username
-                             }]
+                 "user": self.user.username
+            }]
         }, format='json')
         self.assertEqual(response.status_code, 201)
         self.assertEqual(response.data["creator"]['user_name'], self.user.username)

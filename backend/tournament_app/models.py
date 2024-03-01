@@ -29,8 +29,6 @@ class Tournament(models.Model):
         FINAL_PHASE = 'final'
 
     name = models.CharField(max_length=50)
-    # is_open = models.BooleanField(default=True)
-    # max_participants = models.PositiveIntegerField(default=20)
     phase = models.CharField(choices=Phases,
                              default=Phases.NOT_STARTED)
 
