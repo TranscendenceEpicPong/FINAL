@@ -71,7 +71,6 @@ INSTALLED_APPS = [
     'blocks',
     'backend',
     'chats',
-    'core',
     'authentication',
     'tournament_app',
 ]
