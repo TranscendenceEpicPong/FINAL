@@ -27,19 +27,14 @@ class TournamentViewSet(mixins.CreateModelMixin,
     def launch(self):
         tournament = self.get_object()
 
-        if tournament.participants.count() < MIN_PARTICIPANTS:
-            return Response(status=status.HTTP_400_BAD_REQUEST,
-                            data={'error': 'Not enough participants!'})
-
-        if tournament.participants.count() > MAX_PARTICIPANTS:
-            return Response(status=status.HTTP_400_BAD_REQUEST,
-                            data={'error': 'Too many participants!'})
+        serializer = self.get_serializer(tournament)
+        serializer.is_valid(raise_exception=True)
 
         tournament.start_next_phase()
         return Response(status=status.HTTP_201_CREATED,
                         data={
                             'status': 'Tournament started!',
-                            'tournament': TournamentSerializer(tournament).data
+                            'tournament': serializer.data
                         })
 
     @action(detail=True, methods=['post'], permission_classes=[NotStarted])
@@ -53,10 +48,11 @@ class TournamentViewSet(mixins.CreateModelMixin,
 
         tournament: Tournament = self.get_object()
         participant = tournament.participants.get(user=user)
+        participant.is_active = True
         serializer = ParticipantSerializer(data=data,
                                            instance=participant)
-        if not serializer.is_valid():
-            return Response(status=status.HTTP_400_BAD_REQUEST,
-                            data={'errors': serializer.errors})
+
+        serializer.is_valid(raise_exception=True)
         serializer.save()
+
         return Response(status=status.HTTP_202_ACCEPTED)
