@@ -95,29 +95,31 @@ class TournamentApiTestCase(APITestCase, TournamentsBaseTest):
         self.assertEqual(len(response.data), 1)
 
     def test_create_tournament_without_current_user(self):
-        response = self.client.post(self.tournament_path, {
+        response = self.client.post(f"{self.base_path}/", {
             "name": "Test tournament",
             "participants": [
                 {
-                    "username": f"user{i}"
-                } for i in range(8)
+                    "user": f"user{i}"
+                } for i in range(1, 8)
             ]
-        })
-        self.assertEqual(response.status_code, 403)
+        }, format="json")
+        self.assertContains(response,
+                            "The creator must be in the participants",
+                            status_code=400)
 
     def test_create_tournament_with_current_user(self):
-        response = self.client.post(self.tournament_path, {
+        response = self.client.post(f"{self.base_path}/", {
             "name": "Test tournament",
             "participants": [*[
                 {
-                    "username": f"user{i}"
-                } for i in range(8)
+                    "user": f"user{i}"
+                } for i in range(1, 8)
             ], {
-                "username": self.user.usermame
+                "user": self.user.username
             }]
-        })
-        self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.data["creator"], self.user.username)
+        }, format='json')
+        self.assertEqual(response.status_code, 201)
+        self.assertEqual(response.data["creator"]['user_name'], self.user.username)
         for participant in response.data["participants"]:
             self.assertFalse(participant["is_active"])
 
@@ -134,14 +136,16 @@ class TournamentApiTestCase(APITestCase, TournamentsBaseTest):
         self.assertTrue(participant.is_active)
 
     def test_launch_tournament(self):
-        pass
+        self.tournament.participants.create(user=self.user, is_creator=True)
+        self.tournament.participants.update(is_active=True)
+        response = self.client.post(f"{self.detail_path}/launch/")
+        self.assertEqual(response.status_code, 201)
 
 
 class PhasesTestCase(TestCase):
     def create_tournament(self, nb_participants):
         tournament = Tournament.objects.create(
             name=f"test_{nb_participants}_participants",
-            max_participants=nb_participants,
         )
         for i in range(nb_participants):
             username = f'user{i}'
@@ -195,15 +199,14 @@ class PhasesTestCase(TestCase):
 class ScoreTest(TestCase):
     def setUp(self):
         nb_participants = 8
-        self.tournament = Tournament.objects.create(
-            name=f"test_score",
-            max_participants=nb_participants,
-        )
+        self.tournament = Tournament.objects.create(name=f"test_score")
         for i in range(nb_participants):
             username = f'user{i}'
             alias = f'alias_user{i}'
             user, created = get_user_model().objects.get_or_create(username=username)
-            RegistrationTournament.objects.create(user=user, tournament=self.tournament, alias=alias)
+            RegistrationTournament.objects.create(user=user,
+                                                  tournament=self.tournament,
+                                                  alias=alias)
 
         self.tournament.start_next_phase()
 

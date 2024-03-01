@@ -7,7 +7,7 @@ class IsCreator(permissions.BasePermission):
     message = 'You must be the creator of the tournament.'
 
     def has_object_permission(self, request, view, obj):
-        if obj.creator == request.user:
+        if obj.creator.user == request.user:
             return True
         return False
 

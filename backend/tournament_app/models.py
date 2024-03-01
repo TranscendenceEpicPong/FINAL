@@ -43,10 +43,6 @@ class Tournament(models.Model):
             or self.participants.first()
 
     @property
-    def is_full(self):
-        return self.participants.count() >= self.max_participants
-
-    @property
     def ranking(self) -> 'QuerySet[RegistrationTournament]':
         return self.participants.filter(is_active=True).order_by(
             '-points',

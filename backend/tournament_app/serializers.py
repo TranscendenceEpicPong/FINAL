@@ -2,18 +2,16 @@ from django.db import transaction
 
 from .models import *
 from rest_framework import serializers
-from django.urls import reverse
-from core.models import EpicPongUser
 
 
 class ParticipantSerializer(serializers.ModelSerializer):
     user = serializers.SlugRelatedField(slug_field='username',
                                         queryset=get_user_model().objects.all())
+    is_active = serializers.BooleanField(read_only=True)
 
     class Meta:
         model = RegistrationTournament
-        fields = ["user", "alias", "is_creator"]
-        read_only_fields = ["is_active"]
+        fields = ["user", "alias", "is_creator", "is_active"]
 
     def update(self, instance, validated_data):
         instance.alias = validated_data.get('alias', instance.alias)
@@ -28,6 +26,8 @@ class TournamentSerializer(serializers.ModelSerializer):
     participants = ParticipantSerializer(many=True)
     number_of_participants = serializers.SerializerMethodField(read_only=True)
     matches = serializers.SerializerMethodField(read_only=True)
+    phase = serializers.CharField(read_only=True)
+    id = serializers.IntegerField(read_only=True)
 
     @property
     def current_user(self):
@@ -38,8 +38,9 @@ class TournamentSerializer(serializers.ModelSerializer):
     class Meta:
         model = Tournament
         fields = [
-            'id', 'name', 'creator', 'participants',
-            'number_of_participants', 'matches', 'phase'
+            'name', 'creator', 'participants',
+            'number_of_participants', 'matches',
+            'id', 'phase'
         ]
 
     def validate_participants(self, participants: list):
@@ -67,16 +68,24 @@ class TournamentSerializer(serializers.ModelSerializer):
             creator = creators[0]
             if creator['user'] != self.current_user:
                 raise serializers.ValidationError("The creator must be the current user")
+            return participants
         else:
+            has_creator = False
+
             def set_current_user_as_creator(participant):
+                nonlocal has_creator
                 if participant['user'] == self.current_user:
                     participant['is_creator'] = True
+                    has_creator = True
                 return participant
 
             participants = list(map(
                 set_current_user_as_creator,
                 participants
             ))
+
+            if not has_creator:
+                raise serializers.ValidationError("The creator must be in the participants")
 
         return participants
 

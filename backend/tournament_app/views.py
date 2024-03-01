@@ -2,6 +2,7 @@ from rest_framework import viewsets, mixins, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
 
+from core.models import EpicPongUser
 from .permissions import IsParticipant, IsCreator, NotStarted
 from .serializers import *
 from .models import *
@@ -10,10 +11,11 @@ from django.db.models import QuerySet
 import json
 
 
-class TournamentViewSet(mixins.CreateModelMixin,
-                        mixins.ListModelMixin,
-                        mixins.RetrieveModelMixin,
-                        viewsets.GenericViewSet):
+# class TournamentViewSet(mixins.CreateModelMixin,
+#                         mixins.RetrieveModelMixin,
+#                         mixins.ListModelMixin,
+#                         viewsets.GenericViewSet):
+class TournamentViewSet(viewsets.ModelViewSet):
     serializer_class = TournamentSerializer
     permission_classes = [IsAuthenticated, IsParticipant]
 
@@ -28,11 +30,8 @@ class TournamentViewSet(mixins.CreateModelMixin,
             permission_classes=[*permission_classes,
                                 IsCreator,
                                 NotStarted])
-    def launch(self):
+    def launch(self, request, pk=None):
         tournament = self.get_object()
-
-        serializer = self.get_serializer(tournament)
-        serializer.is_valid(raise_exception=True)
 
         if tournament.active_count < MIN_PARTICIPANTS:
             return Response(status=status.HTTP_400_BAD_REQUEST,
@@ -42,14 +41,14 @@ class TournamentViewSet(mixins.CreateModelMixin,
         return Response(status=status.HTTP_201_CREATED,
                         data={
                             'status': 'Tournament started!',
-                            'tournament': serializer.data
+                            'tournament': self.get_serializer(tournament).data
                         })
 
     @action(detail=True,
             methods=['post'],
             permission_classes=[*permission_classes,
                                 NotStarted])
-    def register(self, request, pk):
+    def register(self, request, pk=None):
         user: EpicPongUser = request.user
         data = json.loads(request.body)
         if 'alias' not in data or not data['alias']:
@@ -62,7 +61,7 @@ class TournamentViewSet(mixins.CreateModelMixin,
         try:
             participant = tournament.participants.get(user=user)
         # except RegistrationTournament.DoesNotExist:
-            # It is already handled in IsParticipant permission
+        # It is already handled in IsParticipant permission
         except RegistrationTournament.MultipleObjectsReturned:
             return Response(status=status.HTTP_400_BAD_REQUEST,
                             data={'error': "'You can't register more than once!"})
