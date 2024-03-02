@@ -16,6 +16,9 @@ from django.contrib.auth import \
 import datetime
 from blocks.service import BlockService
 from .forms import UserUpdateForm
+from game.models import Game
+from django.db.models import Q
+from game.status import Status
 
 @require_GET
 def server_info(request):
@@ -35,12 +38,29 @@ def search(request, username):
     block_service = BlockService(user)
     if user is None or block_service.is_block(owner):
         return get_response({ "message": "Utilisateur introuvable", "status": 404})
+    games = Game.objects.filter(Q(player1=user) | Q(player2=user))
+    victory = games.filter(winner=user).count()
+    defeat = games.filter(status=Status.FINISHED.value).exclude(winner=user).count()
+
+    matchs = []
+    for game in games:
+        matchs.append({
+            "id": game.id,
+            "player1": game.player1.username,
+            "player2": game.player2.username if game.player2 is not None else None,
+            "score_player1": game.score_player1,
+            "score_player2": game.score_player2,
+            "winner": game.winner.username if game.winner is not None else None,
+            "status": game.status,
+        })
+
     return JsonResponse({
         "id": user.id,
         "username": user.username,
         "avatar": user.avatar,
-        "wins": 10,
-        "loses": 5,
+        "wins": victory,
+        "loses": defeat,
+        "games": matchs,
     }, status=200)
 
 @require_http_methods("GET")
