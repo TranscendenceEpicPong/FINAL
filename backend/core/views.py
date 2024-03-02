@@ -52,6 +52,7 @@ def search(request, username):
             "score_player2": game.score_player2,
             "winner": game.winner.username if game.winner is not None else None,
             "status": game.status,
+            "date": game.created_at.strftime("%Y-%m-%d %H:%M:%S"),
         })
 
     return JsonResponse({
