@@ -2,9 +2,10 @@ from django.db import models
 from core.models import EpicPongUser as User
 from .status import Status
 from django.db.models import Q
+from .config import GameConfig
 
 # Create your models here.
-OBJECTIF_SCORE = 5
+
 class Game(models.Model):
     player1 = models.ForeignKey(User, on_delete=models.CASCADE, related_name='opponents_of_user')
     player2 = models.ForeignKey(User, on_delete=models.CASCADE, related_name='opponents_user', null=True)
@@ -35,9 +36,9 @@ class Game(models.Model):
         self.save()
 
     def get_the_winner(self):
-        if self.score_player1 == OBJECTIF_SCORE:
+        if self.score_player1 == GameConfig.OBJECTIVE_SCORE.value:
             return self.player1
-        elif self.score_player2 == OBJECTIF_SCORE:
+        elif self.score_player2 == GameConfig.OBJECTIVE_SCORE.value:
             return self.player2
         return None
 
