@@ -3,8 +3,11 @@ from core.models import EpicPongUser as User
 from .status import Status
 from django.db.models import Q
 from .config import GameConfig
+from datetime import datetime
 
 # Create your models here.
+def current_time():
+    return datetime.now()
 
 class Game(models.Model):
     player1 = models.ForeignKey(User, on_delete=models.CASCADE, related_name='opponents_of_user')
@@ -13,6 +16,7 @@ class Game(models.Model):
     score_player2 = models.IntegerField(default=0)
     winner = models.ForeignKey(User, on_delete=models.CASCADE, related_name='winner_user', null=True)
     status = models.IntegerField(default=Status.WAITING.value)
+    created_at = models.DateTimeField(default=current_time)
 
     def __str__(self):
         return f"{self.player1} vs {self.player2} - {self.status}"
