@@ -1,70 +1,32 @@
 import json
 from channels.generic.websocket import AsyncWebsocketConsumer
-from asgiref.sync import async_to_sync, sync_to_async
-from urllib.parse import unquote
+from asgiref.sync import sync_to_async
 import jwt
 from backend.settings import env
-from .service import GameService
 from core.models import EpicPongUser
 from .models import Game
-from .manager import GameManager
 from .status import Status
 from django.db.models import Q
 import asyncio
-from .status import StatusRequest
 import copy
-from django.contrib.auth import get_user_model
-import base64
-import math
 import random
+from .config import GameConfig
+from .utils import get_paddle_bottom, get_paddle_top
 
 prefix = "game"
 
 def decode_query_string(query_string):
     try:
         infos_json = jwt.decode(query_string, env('JWT_SECRET'), algorithms=['HS256'])
-        # infos_json = json.loads(base64.b64decode(unquote(query_string.decode('utf-8')).split('.')[1]).decode('utf-8'))
         return infos_json
     except Exception:
         return None
 
 class GameConsumer(AsyncWebsocketConsumer):
     players = {}
-    OBJECTIVE_SCORE = 100
-    PADDLE_HEIGHT = 100
-    PADDLE_WIDTH = 10
-    BALL_RADIUS = 5
-    GAME_SPEED = 0.017
     tasks = {}
     games = {
-        0: {
-            "id": 0,
-            "player1": {
-                "id": 0,
-                "username": "",
-                "score": 0,
-                "x": 10,
-                "y": 200,
-                "color": '#131316'
-            },
-            "player2": {
-                "id": 0,
-                "username": "",
-                "score": 0,
-                "x": 790,
-                "y": 200,
-                "color": '#131316'
-            },
-            "ball": {
-                "x": 400,
-                "y": 200,
-                "dx": 5,
-                "dy": 0,
-            },
-            "status": -1,
-            "winner": 0,
-            "player_scored": 0,
-        }
+        0: copy.deepcopy(GameConfig.DEFAULT_GAME.value)
     }
 
     async def connect(self):
@@ -99,10 +61,10 @@ class GameConsumer(AsyncWebsocketConsumer):
         if game['player1']['id'] != user.id:
             player = game['player2']
 
-        if data.get('direction') == 'up' and player['y'] - (self.PADDLE_HEIGHT / 2) > 5:
-            player['y'] -= 5
-        if data.get('direction') == 'down' and player['y'] + (self.PADDLE_HEIGHT / 2) < 395:
-            player['y'] += 5
+        if data.get('direction') == 'up' and get_paddle_top(player['y'], GameConfig.PADDLE_HEIGHT.value) > 5:
+            player['y'] -= GameConfig.PADDLE_SPEED.value
+        if data.get('direction') == 'down' and get_paddle_bottom(player['y'], GameConfig.PADDLE_HEIGHT.value) < 395:
+            player['y'] += GameConfig.PADDLE_SPEED.value
 
         self.games[f"{game_id}"] = game
         await self.channel_layer.group_send(
@@ -150,6 +112,7 @@ class GameConsumer(AsyncWebsocketConsumer):
         else:
             game.player2 = user
             game.status = Status.STARTED.value
+
         await sync_to_async(game.save)()
         self.players[f"{user.id}"] = f"{game.id}"
 
@@ -182,7 +145,6 @@ class GameConsumer(AsyncWebsocketConsumer):
                 "game": self.games[f"{game.id}"]
             }))
             self.tasks[f"{game.id}"] = task
-            print(self.tasks)
 
     async def game_infos(self, event):
         await self.send(text_data=json.dumps(event))
@@ -190,11 +152,14 @@ class GameConsumer(AsyncWebsocketConsumer):
     async def disconnect(self, close_code):
         infos_json = decode_query_string(self.scope['query_string'])
         user = await self.get_user(infos_json['id'])
+
         if user is None:
             return
+
         game = await sync_to_async(Game.objects.filter)(Q(player1=user) | Q(player2=user), Q(status=Status.WAITING.value) | Q(status=Status.STARTED.value))
         if await sync_to_async(game.count)() == 0:
             return
+
         game = await sync_to_async(game.first)()
         if game is not None:
             await sync_to_async(game.leave_game)(user)
@@ -210,6 +175,7 @@ class GameConsumer(AsyncWebsocketConsumer):
             )
         else:
             return
+
         game_id = self.players.get(f"{user.id}")
 
         await self.channel_layer.group_discard(
@@ -224,8 +190,8 @@ class GameConsumer(AsyncWebsocketConsumer):
     async def game_loop(self, event):
         game = event['game']
         game_id = game['id']
+
         while self.games.get(f"{game_id}") is not None and self.games[f"{game_id}"]["status"] != Status.FINISHED.value:
-            print("game loop")
             if game['status'] == Status.STARTED.value:
                 self.games[f"{game_id}"] = game
                 await self.channel_layer.group_send(
@@ -236,7 +202,7 @@ class GameConsumer(AsyncWebsocketConsumer):
                         "game": self.games[f"{game_id}"]
                     }
                 )
-                await asyncio.sleep(self.GAME_SPEED)
+                await asyncio.sleep(GameConfig.GAME_SPEED.value)
                 await sync_to_async(self.move_ball)(game_id)
                 await sync_to_async(self.check_ball_touch_paddle_player1)(game_id)
                 await sync_to_async(self.check_ball_touch_paddle_player2)(game_id)
@@ -247,7 +213,6 @@ class GameConsumer(AsyncWebsocketConsumer):
                     await sync_to_async(current_game.set_winner)(winner)
                     self.games[f"{game_id}"]['status'] = current_game.status
                     self.games[f"{game_id}"]['winner'] = winner.id
-        print(f"Game: {self.games.get(f"{game_id}")}, Status: {self.games[f"{game_id}"]['status'] == Status.FINISHED.value}")
 
         if self.games.get(f"{game_id}") and self.games[f"{game_id}"]['status'] == Status.FINISHED.value:
             await self.channel_layer.group_send(
@@ -263,7 +228,6 @@ class GameConsumer(AsyncWebsocketConsumer):
                 self.channel_name
             )
             self.players.pop(f"{game['player1']['id']}")
-            # self.players.pop(f"{game['player2']['id']}")
             self.games.pop(f"{game_id}")
 
     def move_ball(self, game_id):
@@ -271,13 +235,13 @@ class GameConsumer(AsyncWebsocketConsumer):
         self.games[f"{game_id}"]["ball"]["y"] += self.games[f"{game_id}"]["ball"]["dy"]
 
     def check_ball_touch_paddle_player1(self, game_id):
-        if self.games[f"{game_id}"]["ball"]["x"] - self.BALL_RADIUS < self.games[f"{game_id}"]["player1"]["x"] + self.PADDLE_WIDTH:
-            if self.games[f"{game_id}"]["ball"]["y"] > self.games[f"{game_id}"]["player1"]["y"] - (self.PADDLE_HEIGHT / 2) and self.games[f"{game_id}"]["ball"]["y"] < self.games[f"{game_id}"]["player1"]["y"] + (self.PADDLE_HEIGHT / 2):
+        if self.games[f"{game_id}"]["ball"]["x"] - GameConfig.BALL_RADIUS.value < self.games[f"{game_id}"]["player1"]["x"] + GameConfig.PADDLE_WIDTH.value:
+            if self.games[f"{game_id}"]["ball"]["y"] > get_paddle_top(self.games[f"{game_id}"]["player1"]["y"], GameConfig.PADDLE_HEIGHT.value) and self.games[f"{game_id}"]["ball"]["y"] < get_paddle_bottom(self.games[f"{game_id}"]["player1"]["y"], GameConfig.PADDLE_HEIGHT.value):
                 self.games[f"{game_id}"]["ball"]["dx"] *= -1
                 ball_y = self.games[f"{game_id}"]["ball"]["y"]
                 player_y = self.games[f"{game_id}"]["player1"]["y"]
-                top_player_y = player_y - (self.PADDLE_HEIGHT / 2)
-                bottom_player_y = player_y + (self.PADDLE_HEIGHT / 2)
+                top_player_y = get_paddle_top(player_y, GameConfig.PADDLE_HEIGHT.value / 2)
+                bottom_player_y = get_paddle_bottom(player_y, GameConfig.PADDLE_HEIGHT.value / 2)
                 if ball_y < player_y:
                     diff_player_ball = ball_y - player_y
                     diff_player_top = player_y - top_player_y
@@ -298,13 +262,13 @@ class GameConsumer(AsyncWebsocketConsumer):
                 self.reset_by_score(game_id)
 
     def check_ball_touch_paddle_player2(self, game_id):
-        if self.games[f"{game_id}"]["ball"]["x"] + self.BALL_RADIUS > self.games[f"{game_id}"]["player2"]["x"] - self.PADDLE_WIDTH:
-            if self.games[f"{game_id}"]["ball"]["y"] > self.games[f"{game_id}"]["player2"]["y"] - (self.PADDLE_HEIGHT / 2) and self.games[f"{game_id}"]["ball"]["y"] < self.games[f"{game_id}"]["player2"]["y"] + (self.PADDLE_HEIGHT / 2):
+        if self.games[f"{game_id}"]["ball"]["x"] + GameConfig.BALL_RADIUS.value > self.games[f"{game_id}"]["player2"]["x"] - GameConfig.BALL_RADIUS.value:
+            if self.games[f"{game_id}"]["ball"]["y"] > self.games[f"{game_id}"]["player2"]["y"] - (GameConfig.PADDLE_HEIGHT.value / 2) and self.games[f"{game_id}"]["ball"]["y"] < self.games[f"{game_id}"]["player2"]["y"] + (GameConfig.PADDLE_HEIGHT.value / 2):
                 self.games[f"{game_id}"]["ball"]["dx"] *= -1
                 ball_y = self.games[f"{game_id}"]["ball"]["y"]
                 player_y = self.games[f"{game_id}"]["player2"]["y"]
-                top_player_y = player_y - (self.PADDLE_HEIGHT / 2)
-                bottom_player_y = player_y + (self.PADDLE_HEIGHT / 2)
+                top_player_y = get_paddle_top(player_y, GameConfig.PADDLE_HEIGHT.value / 2)
+                bottom_player_y = get_paddle_bottom(player_y, GameConfig.PADDLE_HEIGHT.value / 2)
                 if ball_y < player_y:
                     diff_player_ball = ball_y - player_y
                     diff_player_top = player_y - top_player_y
@@ -325,7 +289,7 @@ class GameConsumer(AsyncWebsocketConsumer):
                 self.reset_by_score(game_id)
 
     def check_ball_touch_wall(self, game_id):
-        if self.games[f"{game_id}"]["ball"]["y"] - self.BALL_RADIUS < 0 or self.games[f"{game_id}"]["ball"]["y"] + self.BALL_RADIUS > 400:
+        if self.games[f"{game_id}"]["ball"]["y"] - GameConfig.BALL_RADIUS.value < 0 or self.games[f"{game_id}"]["ball"]["y"] + GameConfig.BALL_RADIUS.value > 400:
             self.games[f"{game_id}"]["ball"]["dy"] *= -1
 
     def reset_by_score(self, game_id):
