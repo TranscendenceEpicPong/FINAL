@@ -16,6 +16,8 @@ from backend.settings import env
 import requests
 from django.shortcuts import redirect
 from django.http import JsonResponse
+from core.models import EpicPongUser
+
 
 
 def perform_auth(request, creds) -> Tuple[JsonResponse, EpicPongUser]:
@@ -88,31 +90,22 @@ def logout(request):
     return response
 
 
-
-def register42(request):
-    response = JsonResponse({"status": "success", "message": "Succesfully register with 42 !"})
-    return response
-
-
-# Définir les URL et les informations de l'API 42
+# API 42
 CLIENT_ID = "u-s4t2ud-ba30256e8d43ec186c62b98c28d1db0a9169d279f7e85d1a4daa5cb986af0b2b"
 CLIENT_SECRET = "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"
-REDIRECT_URI = "https://api.intra.42.fr/oauth/authorize?client_id=u-s4t2ud-ba30256e8d43ec186c62b98c28d1db0a9169d279f7e85d1a4daa5cb986af0b2b&redirect_uri=http%3A%2F%2Flocalhost%3A8000%2Fauthentication%2F42-register%2F&response_type=code"
+REDIRECT_URI = "http://localhost:8000/authentication/42-register/"
 AUTHORIZE_URL = "https://api.intra.42.fr/oauth/authorize"
 TOKEN_URL = "https://api.intra.42.fr/oauth/token"
 
 def login42(request):
-    # Construire l'URL d'autorisation
     authorize_url = f"{AUTHORIZE_URL}?client_id={CLIENT_ID}&redirect_uri={REDIRECT_URI}&response_type=code"
-    
-    # Rediriger l'utilisateur vers l'URL d'autorisation
     return redirect(authorize_url)
 
 def login42_callback(request):
-    # Récupérer le code d'autorisation à partir de la requête GET
+    # recup code
     code = request.GET.get('code')
 
-    # Échanger le code contre un jeton d'accès
+    # code contre token
     token_payload = {
         "grant_type": "authorization_code",
         "client_id": CLIENT_ID,
@@ -122,11 +115,25 @@ def login42_callback(request):
     }
     response = requests.post(TOKEN_URL, data=token_payload)
 
-    # Traiter la réponse pour obtenir le jeton d'accès
     if response.status_code == 200:
         access_token = response.json()['access_token']
-        # Utilisez access_token pour faire des requêtes à l'API 42 et authentifier l'utilisateur
-        # Par exemple, vous pouvez obtenir des informations sur l'utilisateur ici
-        return JsonResponse({"access_token": access_token})
+        
+        # récup infos user
+        user_info_response = requests.get('https://api.intra.42.fr/v2/me', headers={'Authorization': 'Bearer ' + access_token})
+        if user_info_response.status_code == 200:
+            user_info = user_info_response.json()
+            username_42 = user_info['login']
+        
+            # check si register ou create
+            try:
+                user = EpicPongUser.objects.get(username=username_42)
+            except EpicPongUser.DoesNotExist:
+                user = EpicPongUser.objects.create_user(username=username_42, password='')
+            
+            django_login(request, user)
+            
+            return JsonResponse({"status": "success", "message": "Successfully logged in with 42 account"})
+        else:
+            return JsonResponse({"error": "Failed to obtain user info from 42 API"})
     else:
         return JsonResponse({"error": "Failed to obtain access token"})

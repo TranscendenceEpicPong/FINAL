@@ -9,7 +9,6 @@ from django.conf import settings
 
 def CustomAuthenticationMiddleware(get_response):
     def middleware(request: HttpRequest):
-        print(f"({request.path}) ({settings.UNAUTHENTICATED_REQUESTS}) ({request.path in settings.UNAUTHENTICATED_REQUESTS})")
         if request.path in settings.UNAUTHENTICATED_REQUESTS or request.path.startswith('/admin'):
             return get_response(request)
         elif not getattr(request, 'user', None) or not request.user.is_authenticated:

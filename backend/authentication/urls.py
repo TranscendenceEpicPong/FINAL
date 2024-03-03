@@ -7,6 +7,5 @@ urlpatterns = [
     path("logout", views.logout, name="logout"),
     path("register", views.register, name="register"),
     path("login42", views.login42, name="login42"),
-    path("login42_callback", views.login42_callback, name="login42_callback"),
-    path("42-register/", views.register42, name="42-register"),
+    path("42-register/", views.login42_callback, name="42-register"),
 ]
