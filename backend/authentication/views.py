@@ -130,7 +130,6 @@ def login42_callback(request):
     user_info = user_info_response.json()
     username_42 = user_info.get('login')
     id42 = f"{user_info.get('id')}"
-    print(user_info.get('image', {}).get('link', ''))
     photo = user_info.get('image', {}).get('link', '')
 
     # check si register ou create
