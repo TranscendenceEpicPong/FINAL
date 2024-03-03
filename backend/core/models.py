@@ -13,3 +13,4 @@ def random_token():
 class EpicPongUser(AbstractUser):
     token = models.CharField(max_length=128, default=random_token)
     avatar = models.TextField(default=DEFAULT_AVATAR)
+    id42 = models.CharField(default='')
