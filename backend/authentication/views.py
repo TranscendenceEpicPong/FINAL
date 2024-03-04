@@ -90,16 +90,8 @@ def logout(request):
     response.delete_cookie('authorization')
     return response
 
-
-# API 42
-CLIENT_ID = "u-s4t2ud-ba30256e8d43ec186c62b98c28d1db0a9169d279f7e85d1a4daa5cb986af0b2b"
-CLIENT_SECRET = "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"
-REDIRECT_URI = "http://localhost:8000/authentication/42-register/"
-AUTHORIZE_URL = "https://api.intra.42.fr/oauth/authorize"
-TOKEN_URL = "https://api.intra.42.fr/oauth/token"
-
 def login42(request):
-    authorize_url = f"{AUTHORIZE_URL}?client_id={CLIENT_ID}&redirect_uri={REDIRECT_URI}&response_type=code"
+    authorize_url = f"{env('AUTHORIZE_URL')}?client_id={env('CLIENT_ID')}&redirect_uri={env('REDIRECT_URI')}&response_type=code"
     return redirect(authorize_url)
 
 def login42_callback(request):
@@ -109,12 +101,12 @@ def login42_callback(request):
     # code contre token
     token_payload = {
         "grant_type": "authorization_code",
-        "client_id": CLIENT_ID,
-        "client_secret": CLIENT_SECRET,
+        "client_id": env('CLIENT_ID'),
+        "client_secret": env('CLIENT_SECRET'),
         "code": code,
-        "redirect_uri": REDIRECT_URI
+        "redirect_uri": env('REDIRECT_URI')
     }
-    response = requests.post(TOKEN_URL, data=token_payload)
+    response = requests.post(env('TOKEN_URL'), data=token_payload)
 
     if response.status_code != 200:
         return JsonResponse({"error": "Failed to obtain access token"})

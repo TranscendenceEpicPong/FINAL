@@ -27,6 +27,11 @@ env = environ.Env(
     PASSWORD_42AUTH=(str, ''),
     CORS_ALLOWED_ORIGINS=(list, ["http://localhost:8080"]),
     APP_NAME=(str, 'EpicPong'),
+    CLIENT_ID=(str, "u-s4t2ud-ba30256e8d43ec186c62b98c28d1db0a9169d279f7e85d1a4daa5cb986af0b2b"),
+    CLIENT_SECRET=(str, "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"),
+    REDIRECT_URI=(str, "http://localhost:8000/authentication/42-register/"),
+    AUTHORIZE_URL=(str, "https://api.intra.42.fr/oauth/authorize"),
+    TOKEN_URL=(str, "https://api.intra.42.fr/oauth/token")
 )
 
 CORS_ALLOWED_ORIGINS = env('CORS_ALLOWED_ORIGINS')
