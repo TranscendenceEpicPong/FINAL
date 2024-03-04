@@ -26,7 +26,7 @@ class Command(BaseCommand):
 
         tournament = Tournament.objects.create(
             name=name,
-#            max_participants=max_participants,
+            max_participants=max_participants,
         )
 
         self.stdout.write(self.style.SUCCESS(f'Tournament "{name}" created successfully.'))
