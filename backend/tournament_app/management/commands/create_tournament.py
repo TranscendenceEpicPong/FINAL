@@ -24,10 +24,7 @@ class Command(BaseCommand):
             first_user.set_password('')
             first_user.save()
 
-        tournament = Tournament.objects.create(
-            name=name,
-            max_participants=max_participants,
-        )
+        tournament = Tournament.objects.create(name=name)
 
         self.stdout.write(self.style.SUCCESS(f'Tournament "{name}" created successfully.'))
 

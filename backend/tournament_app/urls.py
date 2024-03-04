@@ -22,7 +22,4 @@ from rest_framework import routers
 router = routers.DefaultRouter()
 router.register(r'', views.TournamentViewSet, basename='tournament')
 
-urlpatterns = [
-    path('<int:tournament_id>/launch', views.start, name='start-tournament'),
-    path('', include(router.urls)),
-]
+urlpatterns = router.urls

@@ -1,5 +1,3 @@
-from collections.abc import Iterable
-
 from django.contrib.auth import get_user_model
 from django.db import models
 import random
@@ -31,8 +29,6 @@ class Tournament(models.Model):
         FINAL_PHASE = 'final'
 
     name = models.CharField(max_length=50)
-    is_open = models.BooleanField(default=True)
-    max_participants = models.PositiveIntegerField(default=20)
     phase = models.CharField(choices=Phases,
                              default=Phases.NOT_STARTED)
 
@@ -45,12 +41,8 @@ class Tournament(models.Model):
             or self.participants.first()
 
     @property
-    def is_full(self):
-        return self.participants.count() >= self.max_participants
-
-    @property
     def ranking(self) -> 'QuerySet[RegistrationTournament]':
-        return self.participants.filter(is_active=True).order_by(
+        return self.active_participants.order_by(
             '-points',
             '-goal_average',
             'goal_conceded',
@@ -100,6 +92,8 @@ class Tournament(models.Model):
             logging.error(f'Tournament "{self.name}" invalid number of participants.')
             raise Exception("Number of participants out of range")
 
+        prev_phase = self.phase
+
         next_phase = self.get_next_phase()
         if next_phase is None:
             raise Exception("No more phases")
@@ -110,7 +104,7 @@ class Tournament(models.Model):
         self.save()
 
         if self.phase not in [self.Phases.NOT_STARTED, self.Phases.POOL_PHASE]:
-            self.eliminate_participants()
+            self.eliminate_participants(prev_phase)
 
         if self.phase != self.Phases.NOT_STARTED:
             self.organize_next_matches()
@@ -124,18 +118,24 @@ class Tournament(models.Model):
             'goal_conceded': participant.goal_conceded
         } for participant in self.ranking]
 
-    def eliminate_participants(self):
-        limit = PHASE_LIMITS[self.phase_index][1]
-        ids_to_eliminate = self.ranking[limit:].values_list('id', flat=True)
-        # print(f"Eliminating {ids_to_eliminate.count()} participants")
-        self.ranking.filter(id__in=ids_to_eliminate).update(is_active=False)
-        # print(f"Remaining {self.active_count} participants")
+    def eliminate_participants(self, prev_phase):
+        if prev_phase == self.Phases.POOL_PHASE:
+            limit = PHASE_LIMITS[self.phase_index][1]
+            ids_to_eliminate = self.ranking[limit:].values_list('id', flat=True)
+            # print(f"Eliminating {ids_to_eliminate.count()} participants")
+            self.ranking.filter(id__in=ids_to_eliminate).update(is_active=False)
+            # print(f"Remaining {self.active_count} participants")
+        else:
+            losers = [match.get_loser() for match in self.matches.filter(
+                phase=prev_phase
+            )]
+            self.participants.filter(user__in=losers).update(is_active=False)
 
     def organize_next_matches(self):
         if self.phase == self.Phases.POOL_PHASE:
             return self.organize_pool_matches()
 
-        participants = self.active_participants
+        participants = self.ranking
         half = self.active_count / 2
         pairs = list(zip_longest(
             participants[:half], reversed(participants[half:])
@@ -268,13 +268,16 @@ class Match(models.Model):
 
 
 class RegistrationTournament(models.Model):
-    user = models.ForeignKey(get_user_model(), on_delete=models.CASCADE)
+    user = models.ForeignKey(get_user_model(),
+                             on_delete=models.CASCADE)
     tournament = models.ForeignKey(Tournament,
                                    on_delete=models.CASCADE,
                                    related_name='participants')
-    alias = models.CharField(max_length=50)
+    alias = models.CharField(max_length=50,
+                             null=True,
+                             blank=False)
     is_creator = models.BooleanField(default=False)
-    is_active = models.BooleanField(default=True)
+    is_active = models.BooleanField(default=False)
     points = models.PositiveIntegerField(default=0)
     goal_average = models.IntegerField(default=0)
     goal_conceded = models.PositiveBigIntegerField(default=0)
