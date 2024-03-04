@@ -21,11 +21,12 @@ from django.urls import path, include
 import core.views
 
 urlpatterns = [
-    path("authentication/", include("authentication.urls")),
     path("", include("core.urls")),
+    path("authentication/", include("authentication.urls")),
     path('admin/', admin.site.urls),
     path('server_info/', core.views.server_info, name='server-info'),
     path("friends/", include("friends.urls")),
     path("blocks/", include("blocks.urls")),
+    path('tournaments/', include('tournament_app.urls'), name='tournament'),
     path("chats/", include("chats.urls")),
 ]

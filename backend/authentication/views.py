@@ -59,7 +59,7 @@ def login(request):
     try:
         raw_data = json.loads(request.body)
     except json.JSONDecodeError:
-        return JsonResponse({"message": "Invalid JSON", "status": 400})
+        return JsonResponse({"error": "Invalid JSON", "status": 400}, status=400)
     form = UserLoginForm(raw_data)
     if not form.is_valid():
         return JsonResponse(form.errors, status=400)

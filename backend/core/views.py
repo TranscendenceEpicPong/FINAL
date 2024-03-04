@@ -17,6 +17,7 @@ import datetime
 from blocks.service import BlockService
 from .forms import UserUpdateForm
 
+
 @require_GET
 def server_info(request):
     response = JsonResponse({
@@ -27,6 +28,7 @@ def server_info(request):
     get_token(request)
     return response
 
+
 @require_http_methods("GET")
 def search(request, username):
     owner = request.user
@@ -34,7 +36,7 @@ def search(request, username):
     user = User.objects.filter(username=username).first()
     block_service = BlockService(user)
     if user is None or block_service.is_block(owner):
-        return get_response({ "message": "Utilisateur introuvable", "status": 404})
+        return get_response({"message": "Utilisateur introuvable", "status": 404})
     return JsonResponse({
         "id": user.id,
         "username": user.username,
@@ -42,6 +44,7 @@ def search(request, username):
         "wins": 10,
         "loses": 5,
     }, status=200)
+
 
 @require_http_methods("GET")
 def index(request):
@@ -52,6 +55,7 @@ def index(request):
         "avatar": user.avatar,
     }, status=200)
 
+
 @require_http_methods("PATCH")
 def update(request):
     current_user = get_user(request)
@@ -59,7 +63,7 @@ def update(request):
         body = json.loads(request.body)
     except:
         return get_response(StatusError.BAD_JSON_FORMAT.value)
-    
+
     form = UserUpdateForm(body, instance=request.user)
     if not form.is_valid():
         return get_response({"message": "Saisie incorrect", "status": 400})
@@ -88,8 +92,8 @@ def update(request):
     }, env('JWT_SECRET'))
 
     response.set_cookie('authorization',
-        value=token,
-        path='/',
-        samesite='Strict')
+                        value=token,
+                        path='/',
+                        samesite='Strict')
 
     return response

@@ -59,7 +59,6 @@ DEBUG = True
 ALLOWED_HOSTS = ["127.0.0.1", "0.0.0.0", "localhost", "10.0.0.34"]
 
 # Application definition
-
 INSTALLED_APPS = [
     'daphne',
     'django.contrib.admin',
@@ -73,12 +72,13 @@ INSTALLED_APPS = [
     'rest_framework',
     'corsheaders',
 
+    'core',
     'friends',
     'blocks',
     'backend',
     'chats',
-    'core',
     'authentication',
+    'tournament_app',
 ]
 
 MIDDLEWARE = [
