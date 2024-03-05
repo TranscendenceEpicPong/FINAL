@@ -23,17 +23,7 @@ def perform_auth(request, creds) -> Tuple[JsonResponse, EpicPongUser]:
     if user is None:
         return JsonResponse({
             "status": "unauthorized",
-            "error": "Wrong credentials"
-        }, status=401), get_user_model().objects.none
-
-def perform_auth(request, creds) -> Tuple[JsonResponse, EpicPongUser]:
-    user = django_authenticate(request,
-                               username=creds['username'],
-                               password=creds['password'])
-    if user is None:
-        return JsonResponse({
-            "status": "unauthorized",
-            "error": "Wrong credentials"
+            "message": "Wrong credentials"
         }, status=401), get_user_model().objects.none
 
     django_login(request, user)
