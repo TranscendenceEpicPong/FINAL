@@ -53,12 +53,12 @@ def waiting(request):
         friends.append({
             'id': user.id,
             "sender": {
-                "username": owner.username,
-                "avatar": owner.avatar,
-            },
-            "receiver": {
                 "username": user.username,
                 "avatar": user.avatar,
+            },
+            "receiver": {
+                "username": owner.username,
+                "avatar": owner.avatar,
             },
         })
 
