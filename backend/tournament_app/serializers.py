@@ -24,6 +24,7 @@ class TournamentSerializer(serializers.ModelSerializer):
     participants = ParticipantSerializer(many=True)
     number_of_participants = serializers.SerializerMethodField(read_only=True)
     matches = serializers.SerializerMethodField(read_only=True)
+    current_matches = serializers.SerializerMethodField(read_only=True)
     phase = serializers.CharField(read_only=True)
     id = serializers.IntegerField(read_only=True)
 
@@ -38,7 +39,7 @@ class TournamentSerializer(serializers.ModelSerializer):
         fields = [
             'name', 'creator', 'participants',
             'number_of_participants', 'matches',
-            'id', 'phase'
+            'id', 'phase', 'current_matches'
         ]
 
     def validate_participants(self, participants: list):
@@ -104,6 +105,18 @@ class TournamentSerializer(serializers.ModelSerializer):
             'alias': creator.alias
         }
         return creator_info
+
+    def get_matches(self, tournament):
+        matches_info = []
+        for match in tournament.matches.all():
+            matches_info.append(match.get_as_dict())
+        return matches_info
+
+    def get_current_matches(self, tournament):
+        matches_info = []
+        for match in tournament.current_matches.all():
+            matches_info.append(match.get_as_dict())
+        return matches_info
 
     def get_matches(self, tournament):
         matches_info = []

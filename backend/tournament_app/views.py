@@ -66,7 +66,6 @@ class TournamentViewSet(viewsets.ModelViewSet):
             return Response(status=status.HTTP_400_BAD_REQUEST,
                             data={'error': "You can't register more than once!"})
 
-        # participant.is_active = True
         serializer = ParticipantSerializer(data=data,
                                            instance=participant)
 

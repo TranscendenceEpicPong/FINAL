@@ -274,6 +274,29 @@ class Match(models.Model):
     def get_loser_score(self):
         return min([self.score_player1, self.score_player2])
 
+    def get_as_dict(self):
+        return {
+            'player1': {
+                'id': self.player1.id,
+                'username': self.player1.username,
+                'alias': self.player1.registrationtournament_set.get(
+                    tournament=self.tournament
+                ).alias,
+            },
+            'player2': {
+                'id': self.player2.id,
+                'username': self.player2.username,
+                'alias': self.player2.registrationtournament_set.get(
+                    tournament=self.tournament
+                ).alias,
+            },
+            'winner': getattr(self.get_winner(), 'username', None),
+            'phase': self.phase,
+            'state': self.state,
+            'score_player1': self.score_player1,
+            'score_player2': self.score_player2,
+        }
+
 
 class RegistrationTournament(models.Model):
     user = models.ForeignKey(get_user_model(),
