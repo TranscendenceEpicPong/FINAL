@@ -12,17 +12,17 @@ class Command(BaseCommand):
     help = 'Start the next phase of a tournament'
 
     def add_arguments(self, parser):
-        parser.add_argument('tournament_name', type=str, help='Name of the tournament')
+        parser.add_argument('id', type=str, help='Name of the tournament')
 
     def handle(self, *args, **options):
-        tournament_name = options['tournament_name']
+        id = options['id']
 
         try:
-            tournament = Tournament.objects.get(name=tournament_name)
+            tournament = Tournament.objects.get(id=id)
             print(tournament)
             tournament.start_next_phase()
-            self.stdout.write(self.style.SUCCESS(f'Successfully started the next phase for tournament "{tournament_name}"'))
+            self.stdout.write(self.style.SUCCESS(f'Successfully started the next phase for tournament "{id}"'))
         except Tournament.DoesNotExist:
-            self.stderr.write(self.style.ERROR(f'Tournament "{tournament_name}" does not exist'))
+            self.stderr.write(self.style.ERROR(f'Tournament "{id}" does not exist'))
         except Exception as e:
             self.stderr.write(self.style.ERROR(f'An error occurred: {str(e)}'))

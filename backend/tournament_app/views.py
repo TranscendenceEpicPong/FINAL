@@ -50,7 +50,7 @@ class TournamentViewSet(viewsets.ModelViewSet):
                                 NotStarted])
     def register(self, request, pk=None):
         user: EpicPongUser = request.user
-        data = json.loads(request.body)
+        data = request.data
         if 'alias' not in data or not data['alias']:
             return Response(status=status.HTTP_400_BAD_REQUEST,
                             data={'error': 'You must provide an alias!'})
@@ -64,9 +64,8 @@ class TournamentViewSet(viewsets.ModelViewSet):
         # It is already handled in IsParticipant permission
         except RegistrationTournament.MultipleObjectsReturned:
             return Response(status=status.HTTP_400_BAD_REQUEST,
-                            data={'error': "'You can't register more than once!"})
+                            data={'error': "You can't register more than once!"})
 
-        participant.is_active = True
         serializer = ParticipantSerializer(data=data,
                                            instance=participant)
 

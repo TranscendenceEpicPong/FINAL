@@ -106,6 +106,9 @@ class Tournament(models.Model):
         if self.phase not in [self.Phases.NOT_STARTED, self.Phases.POOL_PHASE]:
             self.eliminate_participants(prev_phase)
 
+        if self.phase == self.Phases.POOL_PHASE:
+            self.participants.filter(is_active=False).delete()
+
         if self.phase != self.Phases.NOT_STARTED:
             self.organize_next_matches()
 
@@ -208,6 +211,10 @@ class Tournament(models.Model):
             winner_user = match.get_winner()
             loser_user = match.get_loser()
 
+            print(list(self.participants.all()))
+            print("Winner:", winner_user)
+            print("Loser:", loser_user)
+
             winner = self.participants.get(user=winner_user)
             winner.points += 3
             loser = self.participants.get(user=loser_user)
@@ -251,6 +258,8 @@ class Match(models.Model):
     ready_player2 = models.BooleanField(default=False)
 
     def get_winner(self):
+        if self.state != self.MATCH_STATE_CHOICES[-1][0]:
+            return None
         return self.player1 \
             if self.score_player2 < self.score_player1 \
             else self.player2
@@ -259,12 +268,37 @@ class Match(models.Model):
         return max([self.score_player1, self.score_player2])
 
     def get_loser(self):
+        if self.state != self.MATCH_STATE_CHOICES[-1][0]:
+            return None
         return self.player1 \
             if self.score_player2 > self.score_player1 \
             else self.player2
 
     def get_loser_score(self):
         return min([self.score_player1, self.score_player2])
+
+    def get_as_dict(self):
+        return {
+            'player1': {
+                'id': self.player1.id,
+                'username': self.player1.username,
+                'alias': self.player1.registrationtournament_set.get(
+                    tournament=self.tournament
+                ).alias,
+            },
+            'player2': {
+                'id': self.player2.id,
+                'username': self.player2.username,
+                'alias': self.player2.registrationtournament_set.get(
+                    tournament=self.tournament
+                ).alias,
+            },
+            'winner': getattr(self.get_winner(), 'username', None),
+            'phase': self.phase,
+            'state': self.state,
+            'score_player1': self.score_player1,
+            'score_player2': self.score_player2,
+        }
 
 
 class RegistrationTournament(models.Model):
