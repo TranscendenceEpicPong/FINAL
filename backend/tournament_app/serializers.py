@@ -123,7 +123,9 @@ class TournamentSerializer(serializers.ModelSerializer):
                         tournament=tournament
                     ).alias,
                 },
+                'winner': getattr(match.get_winner(), 'username', None),
                 'phase': match.phase,
+                'state': match.state,
                 'score_player1': match.score_player1,
                 'score_player2': match.score_player2,
             }
