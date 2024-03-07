@@ -106,6 +106,9 @@ class Tournament(models.Model):
         if self.phase not in [self.Phases.NOT_STARTED, self.Phases.POOL_PHASE]:
             self.eliminate_participants(prev_phase)
 
+        if self.phase == self.Phases.POOL_PHASE:
+            self.participants.filter(is_active=False).delete()
+
         if self.phase != self.Phases.NOT_STARTED:
             self.organize_next_matches()
 
