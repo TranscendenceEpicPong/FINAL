@@ -208,6 +208,10 @@ class Tournament(models.Model):
             winner_user = match.get_winner()
             loser_user = match.get_loser()
 
+            print(list(self.participants.all()))
+            print("Winner:", winner_user)
+            print("Loser:", loser_user)
+
             winner = self.participants.get(user=winner_user)
             winner.points += 3
             loser = self.participants.get(user=loser_user)
@@ -251,7 +255,7 @@ class Match(models.Model):
     ready_player2 = models.BooleanField(default=False)
 
     def get_winner(self):
-        if self.state != self.MATCH_STATE_CHOICES[-1]:
+        if self.state != self.MATCH_STATE_CHOICES[-1][0]:
             return None
         return self.player1 \
             if self.score_player2 < self.score_player1 \
@@ -261,7 +265,7 @@ class Match(models.Model):
         return max([self.score_player1, self.score_player2])
 
     def get_loser(self):
-        if self.state != self.MATCH_STATE_CHOICES[-1]:
+        if self.state != self.MATCH_STATE_CHOICES[-1][0]:
             return None
         return self.player1 \
             if self.score_player2 > self.score_player1 \

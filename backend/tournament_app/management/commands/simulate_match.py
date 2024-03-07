@@ -11,49 +11,35 @@
 from django.core.management.base import BaseCommand
 from tournament_app.models import Match, Tournament
 import random
-from tournament_app.utils import update_tournament_results
 
 
 class Command(BaseCommand):
     help = 'Simulate matches with random scores in a given phase'
 
     def add_arguments(self, parser):
-        parser.add_argument('tournament_name', type=str, help='Name of the tournament')
-        parser.add_argument('phase', type=str, help='Phase of the tournament')
+        parser.add_argument('id', type=str, help='ID of the tournament', default=0, nargs='?')
 
     def handle(self, *args, **options):
-        tournament_name = options['tournament_name']
-        phase = options['phase']
+        id = options['id']
 
         try:
-            tournament = Tournament.objects.get(name=tournament_name)
+            tournament = Tournament.objects.get(id=id)
         except Tournament.DoesNotExist:
-            self.stdout.write(self.style.ERROR(f'Tournament "{tournament_name}" does not exist.'))
+            self.stdout.write(self.style.ERROR(f'Tournament "{id}" does not exist.'))
             return
 
-        if phase not in [choice[0] for choice in Tournament.Phases.choices]:
-            self.stdout.write(self.style.ERROR(f'Invalid phase: {phase}.'))
-            return
-
-        matches = Match.objects.filter(tournament=tournament, phase=phase)
-
-        if not matches:
-            self.stdout.write(self.style.ERROR(f'No matches found for phase "{phase}" in tournament "{tournament_name}".'))
-            return
-
-        self.stdout.write(self.style.SUCCESS(f'Simulating matches for phase "{phase}" in tournament "{tournament_name}"...'))
+        matches = tournament.current_matches
 
         for match in matches:
             winner = random.choice([match.player1, match.player2])
-            loser = match.player2 if winner == match.player1 else match.player1
 
             match.score_player1 = 3 if winner == match.player1 else random.randint(0, 2)
             match.score_player2 = 3 if winner == match.player2 else random.randint(0, 2)
 
+            match.state = Match.MATCH_STATE_CHOICES[-1][0]
+
             match.save()
 
-            self.stdout.write(self.style.SUCCESS(f'Match: {match.player1.username} vs {match.player2.username} - Scores: {match.score_player1}-{match.score_player2}'))
-        
-        if tournament.Phases.POOL_PHASE == phase:
+        if tournament.Phases.POOL_PHASE == tournament.phase:
             tournament.update_tournament_results()
         self.stdout.write(self.style.SUCCESS('Simulation complete.'))
