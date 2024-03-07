@@ -13,12 +13,10 @@ class ParticipantSerializer(serializers.ModelSerializer):
         model = RegistrationTournament
         fields = ["user", "alias", "is_creator", "is_active"]
 
-    def update(self, instance, validated_data):
-        instance.alias = validated_data.get('alias', instance.alias)
-        if instance.alias and instance.tournament.phase == Tournament.Phases.NOT_STARTED:
-            instance.is_active = True
-        instance.save()
-        return instance
+    def validate(self, data):
+        if data.get('alias', None) and len(data['alias']):
+            data['is_active'] = True
+        return data
 
 
 class TournamentSerializer(serializers.ModelSerializer):
