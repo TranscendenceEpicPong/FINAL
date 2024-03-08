@@ -23,6 +23,11 @@ class Game(models.Model):
 
     def __str__(self):
         return f"{self.player1} vs {self.player2} - {self.status}"
+
+    def check_tournament(self):
+        if not self.tournament:
+            return
+        self.tournament.check_next_phase()
     
     def leave_game(self, user):
         if self.player2 is None:
@@ -34,6 +39,7 @@ class Game(models.Model):
             self.winner = self.player1
         self.status = Status.FINISHED.value
         self.save()
+        self.check_tournament()
 
     def player_score(self, player_have_score):
         if player_have_score == self.player1:
@@ -53,6 +59,7 @@ class Game(models.Model):
         self.winner = user
         self.status = Status.FINISHED.value
         self.save()
+        self.check_tournament()
 
     def get_player_number(self, user):
         if self.player1 == user:
