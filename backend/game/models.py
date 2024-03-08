@@ -88,6 +88,7 @@ class Game(models.Model):
 
     def get_as_dict(self):
         return {
+            'id': self.id,
             'player1': {
                 'id': self.player1.id,
                 'username': self.player1.username,
