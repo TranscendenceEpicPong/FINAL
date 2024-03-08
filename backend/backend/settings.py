@@ -16,7 +16,7 @@ import os
 
 from corsheaders.defaults import default_headers
 
-LOCAL_IP = "10.18.204.164"
+LOCAL_IP = "localhost"
 
 env = environ.Env(
     DB_NAME=(str, 'transcendence'),

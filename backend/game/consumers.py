@@ -12,6 +12,8 @@ import copy
 import random
 from .config import GameConfig
 from .utils import get_paddle_bottom, get_paddle_top
+from channels.layers import get_channel_layer
+from friends.models import Friends
 
 prefix = "game"
 
@@ -46,8 +48,119 @@ class GameConsumer(AsyncWebsocketConsumer):
         user = await self.get_user(infos_json['id'])
         if data.get('action') == 'join':
             await self.find_game(user)
-        if data.get('action') == 'move':
+        elif data.get('action') == 'invite':
+            await self.invite_friend(data, user)
+        elif data.get('action') == 'move':
             await self.move_paddle(data, user)
+
+    async def not_found_user(self):
+        await self.send(text_data=json.dumps({
+            'type': 'error',
+            "message": "Utilisateur non trouvé."
+        }))
+        return
+
+    async def not_friend(self):
+        await self.send(text_data=json.dumps({
+            'type': 'error',
+            "message": "Vous n'êtes pas amis."
+        }))
+        return
+
+    async def already_in_game(self):
+        await self.send(text_data=json.dumps({
+            'type': 'error',
+            "message": "Vous êtes déjà dans une partie."
+        }))
+        return
+
+    async def invite_friend(self, data, user):
+        invited_user = await self.get_user_by_username(data.get('username'))
+        if invited_user is None:
+            return await self.not_found_user()
+
+        friend = await sync_to_async(Friends.objects.filter)(user=user, friend=invited_user)
+        if await sync_to_async(friend.count)() == 0:
+            return await self.not_friend()
+
+        game = await sync_to_async(Game.objects.filter)(Q(player1=user) | Q(player2=user), Q(status=Status.WAITING.value) | Q(status=Status.STARTED.value))
+        if await sync_to_async(game.count)() > 0:
+            return await self.already_in_game()
+
+        game = await sync_to_async(Game.objects.filter)(Q(player1=user, player2=invited_user) | Q(player1=invited_user,player2=user), status=Status.RESERVED.value)
+        if await sync_to_async(game.count)() > 0:
+            game = await sync_to_async(game.first)()
+            await self.join_game(game, 2, user)
+            data_to_send = {
+                'type':'chat_message',
+                'content': "[start-game]",
+                "action": "start-game",
+                "sender": {
+                    "username": user.username,
+                    "avatar": user.avatar,
+                },
+                "receiver": {
+                    "username": invited_user.username,
+                    "avatar": invited_user.avatar,
+                },
+            }
+
+            await get_channel_layer().group_send(
+                f"chats-{user.id}",
+                data_to_send
+            )
+
+            await get_channel_layer().group_send(
+                f"chats-{invited_user.id}",
+                data_to_send
+            )
+            return
+
+        game = await sync_to_async(Game.objects.create)(player1=user, player2=invited_user, status=Status.RESERVED.value)
+        self.players[f"{user.id}"] = f"{game.id}"
+
+        if self.games.get(f"{game.id}") is None:
+            self.games[f"{game.id}"] = copy.deepcopy(self.games[0])
+
+        self.games[f"{game.id}"]['id'] = game.id
+        self.games[f"{game.id}"][f"player1"]['id'] = user.id
+        self.games[f"{game.id}"][f"player1"]['username'] = user.username
+        self.games[f"{game.id}"]["status"] = game.status
+
+        self.room_group_name = f"{prefix}-{game.id}"
+        await get_channel_layer().group_add(
+            self.room_group_name,
+            self.channel_name
+        )
+
+        data_to_send = {
+            'type':'chat_message',
+            'content': "[join-game]",
+            "sender": {
+                "username": user.username,
+                "avatar": user.avatar,
+            },
+            "receiver": {
+                "username": invited_user.username,
+                "avatar": invited_user.avatar,
+            },
+        }
+
+        await get_channel_layer().group_send(
+            f"chats-{user.id}",
+            data_to_send
+        )
+
+        await get_channel_layer().group_send(
+            f"chats-{invited_user.id}",
+            data_to_send
+        )
+
+    async def get_user_by_username(self, username):
+        user = await sync_to_async(EpicPongUser.objects.filter)(username=username)
+        if await sync_to_async(user.count)() == 0:
+            return None
+        return await sync_to_async(user.first)()
 
     async def move_paddle(self, data, user):
         game_id = self.players.get(f"{user.id}")
@@ -85,11 +198,7 @@ class GameConsumer(AsyncWebsocketConsumer):
     async def find_game(self, user):
         game = await sync_to_async(Game.objects.filter)(Q(player1=user) | Q(player2=user), Q(status=Status.WAITING.value) | Q(status=Status.STARTED.value))
         if await sync_to_async(game.count)() > 0:
-            await self.send(text_data=json.dumps({
-                'type': 'error',
-                "message": "Vous êtes déjà dans une partie."
-            }))
-            return
+            return await self.already_in_game()
         game = await sync_to_async(Game.objects.filter)(player2__isnull=True)
         if await sync_to_async(game.count)() == 0:
             await self.create_game(user)

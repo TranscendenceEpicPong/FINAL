@@ -50,3 +50,8 @@ class Game(models.Model):
         self.winner = user
         self.status = Status.FINISHED.value
         self.save()
+
+    def get_player_number(self, user):
+        if self.player1 == user:
+            return 1
+        return 2

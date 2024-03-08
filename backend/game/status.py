@@ -4,6 +4,7 @@ class Status(Enum):
     WAITING = 0
     STARTED = 1
     FINISHED = 2
+    RESERVED = 3
 
 class StatusRequest(Enum):
     BAD_JSON_FORMAT = { "message": "Mauvais format JSON", "status": 400 }
