@@ -77,7 +77,7 @@ class Game(models.Model):
         return max([self.score_player1, self.score_player2])
 
     def get_loser(self):
-        if self.state != Status.FINISHED.value:
+        if self.status != Status.FINISHED.value:
             return None
         return self.player1 \
             if self.score_player2 > self.score_player1 \

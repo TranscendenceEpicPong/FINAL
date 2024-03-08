@@ -122,10 +122,11 @@ class GameConsumer(AsyncWebsocketConsumer):
         if self.games.get(f"{game.id}") is None:
             self.games[f"{game.id}"] = copy.deepcopy(self.games[0])
 
-        self.games[f"{game.id}"]['id'] = game.id
-        self.games[f"{game.id}"][f"player1"]['id'] = user.id
-        self.games[f"{game.id}"][f"player1"]['username'] = user.username
-        self.games[f"{game.id}"]["status"] = game.status
+        if self.games.get(f"{game.id}"):
+            self.games[f"{game.id}"]['id'] = game.id
+            self.games[f"{game.id}"][f"player1"]['id'] = user.id
+            self.games[f"{game.id}"][f"player1"]['username'] = user.username
+            self.games[f"{game.id}"]["status"] = game.status
 
         self.room_group_name = f"{prefix}-{game.id}"
         await get_channel_layer().group_add(
