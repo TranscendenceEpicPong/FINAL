@@ -4,12 +4,15 @@ from .status import Status
 from django.db.models import Q
 from .config import GameConfig
 from datetime import datetime
+from tournament_app.models import Tournament
 
 # Create your models here.
 def current_time():
     return datetime.now()
 
 class Game(models.Model):
+    tournament = models.ForeignKey(Tournament, on_delete=models.CASCADE, related_name='matches', null=True, blank=True)
+    phase = models.CharField(choices=Tournament.Phases, null=True, blank=True)
     player1 = models.ForeignKey(User, on_delete=models.CASCADE, related_name='opponents_of_user')
     player2 = models.ForeignKey(User, on_delete=models.CASCADE, related_name='opponents_user', null=True)
     score_player1 = models.IntegerField(default=0)
@@ -55,3 +58,46 @@ class Game(models.Model):
         if self.player1 == user:
             return 1
         return 2
+
+    def get_winner(self):
+        if self.status != Status.FINISHED.value:
+            return None
+        return self.player1 \
+            if self.score_player2 < self.score_player1 \
+            else self.player2
+
+    def get_winner_score(self):
+        return max([self.score_player1, self.score_player2])
+
+    def get_loser(self):
+        if self.state != Status.FINISHED.value:
+            return None
+        return self.player1 \
+            if self.score_player2 > self.score_player1 \
+            else self.player2
+
+    def get_loser_score(self):
+        return min([self.score_player1, self.score_player2])
+
+    def get_as_dict(self):
+        return {
+            'player1': {
+                'id': self.player1.id,
+                'username': self.player1.username,
+                'alias': self.player1.registrationtournament_set.get(
+                    tournament=self.tournament
+                ).alias,
+            },
+            'player2': {
+                'id': self.player2.id,
+                'username': self.player2.username,
+                'alias': self.player2.registrationtournament_set.get(
+                    tournament=self.tournament
+                ).alias,
+            },
+            'winner': getattr(self.get_winner(), 'username', None),
+            'phase': self.phase,
+            'state': self.status,
+            'score_player1': self.score_player1,
+            'score_player2': self.score_player2,
+        }

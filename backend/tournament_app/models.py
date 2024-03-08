@@ -135,6 +135,7 @@ class Tournament(models.Model):
             self.participants.filter(user__in=losers).update(is_active=False)
 
     def organize_next_matches(self):
+        from game.models import Game as Match
         if self.phase == self.Phases.POOL_PHASE:
             return self.organize_pool_matches()
 
@@ -152,6 +153,7 @@ class Tournament(models.Model):
             )
 
     def organize_pool_matches(self):
+        from game.models import Game as Match
         participants_list_2free = list(self.participants.all())
         random.shuffle(participants_list_2free)
         participants_list_1free = []
@@ -239,66 +241,66 @@ class Tournament(models.Model):
             loser.save()
 
 
-class Match(models.Model):
-    tournament = models.ForeignKey(Tournament, on_delete=models.CASCADE, related_name='matches')
-    player1 = models.ForeignKey(get_user_model(), on_delete=models.CASCADE, related_name='player1_matches')
-    player2 = models.ForeignKey(get_user_model(), on_delete=models.CASCADE, related_name='player2_matches')
-    phase = models.CharField(choices=Tournament.Phases)
-    score_player1 = models.PositiveIntegerField(default=0)
-    score_player2 = models.PositiveIntegerField(default=0)
+# class Match(models.Model):
+#     tournament = models.ForeignKey(Tournament, on_delete=models.CASCADE, related_name='matches')
+#     player1 = models.ForeignKey(get_user_model(), on_delete=models.CASCADE, related_name='player1_matches')
+#     player2 = models.ForeignKey(get_user_model(), on_delete=models.CASCADE, related_name='player2_matches')
+#     phase = models.CharField(choices=Tournament.Phases)
+#     score_player1 = models.PositiveIntegerField(default=0)
+#     score_player2 = models.PositiveIntegerField(default=0)
 
-    MATCH_STATE_CHOICES = [
-        ('not_started', 'Not Started'),
-        ('in_progress', 'In Progress'),
-        ('finished', 'Finished'),
-    ]
+#     MATCH_STATE_CHOICES = [
+#         ('not_started', 'Not Started'),
+#         ('in_progress', 'In Progress'),
+#         ('finished', 'Finished'),
+#     ]
 
-    state = models.CharField(max_length=20, choices=MATCH_STATE_CHOICES, default='not_started')
-    ready_player1 = models.BooleanField(default=False)
-    ready_player2 = models.BooleanField(default=False)
+#     state = models.CharField(max_length=20, choices=MATCH_STATE_CHOICES, default='not_started')
+#     ready_player1 = models.BooleanField(default=False)
+#     ready_player2 = models.BooleanField(default=False)
 
-    def get_winner(self):
-        if self.state != self.MATCH_STATE_CHOICES[-1][0]:
-            return None
-        return self.player1 \
-            if self.score_player2 < self.score_player1 \
-            else self.player2
+    # def get_winner(self):
+    #     if self.state != self.MATCH_STATE_CHOICES[-1][0]:
+    #         return None
+    #     return self.player1 \
+    #         if self.score_player2 < self.score_player1 \
+    #         else self.player2
 
-    def get_winner_score(self):
-        return max([self.score_player1, self.score_player2])
+    # def get_winner_score(self):
+    #     return max([self.score_player1, self.score_player2])
 
-    def get_loser(self):
-        if self.state != self.MATCH_STATE_CHOICES[-1][0]:
-            return None
-        return self.player1 \
-            if self.score_player2 > self.score_player1 \
-            else self.player2
+    # def get_loser(self):
+    #     if self.state != self.MATCH_STATE_CHOICES[-1][0]:
+    #         return None
+    #     return self.player1 \
+    #         if self.score_player2 > self.score_player1 \
+    #         else self.player2
 
-    def get_loser_score(self):
-        return min([self.score_player1, self.score_player2])
+    # def get_loser_score(self):
+    #     return min([self.score_player1, self.score_player2])
 
-    def get_as_dict(self):
-        return {
-            'player1': {
-                'id': self.player1.id,
-                'username': self.player1.username,
-                'alias': self.player1.registrationtournament_set.get(
-                    tournament=self.tournament
-                ).alias,
-            },
-            'player2': {
-                'id': self.player2.id,
-                'username': self.player2.username,
-                'alias': self.player2.registrationtournament_set.get(
-                    tournament=self.tournament
-                ).alias,
-            },
-            'winner': getattr(self.get_winner(), 'username', None),
-            'phase': self.phase,
-            'state': self.state,
-            'score_player1': self.score_player1,
-            'score_player2': self.score_player2,
-        }
+    # def get_as_dict(self):
+    #     return {
+    #         'player1': {
+    #             'id': self.player1.id,
+    #             'username': self.player1.username,
+    #             'alias': self.player1.registrationtournament_set.get(
+    #                 tournament=self.tournament
+    #             ).alias,
+    #         },
+    #         'player2': {
+    #             'id': self.player2.id,
+    #             'username': self.player2.username,
+    #             'alias': self.player2.registrationtournament_set.get(
+    #                 tournament=self.tournament
+    #             ).alias,
+    #         },
+    #         'winner': getattr(self.get_winner(), 'username', None),
+    #         'phase': self.phase,
+    #         'state': self.state,
+    #         'score_player1': self.score_player1,
+    #         'score_player2': self.score_player2,
+    #     }
 
 
 class RegistrationTournament(models.Model):

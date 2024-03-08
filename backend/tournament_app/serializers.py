@@ -138,7 +138,7 @@ class TournamentSerializer(serializers.ModelSerializer):
                 },
                 'winner': getattr(match.get_winner(), 'username', None),
                 'phase': match.phase,
-                'state': match.state,
+                'state': match.status,
                 'score_player1': match.score_player1,
                 'score_player2': match.score_player2,
             }

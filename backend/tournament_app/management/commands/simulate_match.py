@@ -9,8 +9,9 @@
 #########################################################################################
 
 from django.core.management.base import BaseCommand
-from tournament_app.models import Match, Tournament
+from tournament_app.models import Tournament
 import random
+from game.models import Game as Match
 
 
 class Command(BaseCommand):

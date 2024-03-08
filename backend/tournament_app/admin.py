@@ -1,5 +1,6 @@
 from django.contrib import admin
-from .models import Tournament, RegistrationTournament, Match
+from .models import Tournament, RegistrationTournament
+from game.models import Game as Match
 
 
 # Register your models here.
