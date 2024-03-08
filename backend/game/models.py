@@ -29,8 +29,8 @@ class Game(models.Model):
             return
         self.tournament.check_next_phase()
     
-    def leave_game(self, user):
-        if self.player2 is None:
+    def leave_game(self, user, delete=True):
+        if self.player2 is None and delete:
             self.delete()
             return
         if self.player1 == user:
@@ -82,6 +82,9 @@ class Game(models.Model):
         return self.player1 \
             if self.score_player2 > self.score_player1 \
             else self.player2
+
+    def get_tournament(self):
+        return self.tournament
 
     def get_loser_score(self):
         return min([self.score_player1, self.score_player2])

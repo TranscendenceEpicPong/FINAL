@@ -14,6 +14,7 @@ from .config import GameConfig
 from .utils import get_paddle_bottom, get_paddle_top
 from channels.layers import get_channel_layer
 from friends.models import Friends
+from tournament_app.models import Tournament
 
 prefix = "game"
 
@@ -62,6 +63,20 @@ class GameConsumer(AsyncWebsocketConsumer):
         }))
         return
 
+    async def not_found_game(self):
+        await self.send(text_data=json.dumps({
+            'type': 'error',
+            "message": "Partie non trouvé."
+        }))
+        return
+
+    async def not_found_tournament(self):
+        await self.send(text_data=json.dumps({
+            'type': 'error',
+            "message": "Tournois non trouvé."
+        }))
+        return
+
     async def not_friend(self):
         await self.send(text_data=json.dumps({
             'type': 'error',
@@ -80,6 +95,44 @@ class GameConsumer(AsyncWebsocketConsumer):
         invited_user = await self.get_user_by_username(data.get('username'))
         if invited_user is None:
             return await self.not_found_user()
+        tournament = await sync_to_async(Tournament.objects.filter)(id=data.get('tournamentId'))
+        if await sync_to_async(tournament.count)() == 0:
+            return await self.not_found_tournament()
+        tournament = await sync_to_async(tournament.first)()
+        game = await sync_to_async(Game.objects.filter)(Q(player1=user, player2=invited_user) | Q(player1=invited_user, player2=user), Q(status=Status.WAITING.value) | Q(status=Status.RESERVED.value), tournament=tournament)
+        if await sync_to_async(game.count)() == 0:
+            return await self.not_found_game()
+        game = await sync_to_async(game.first)()
+        if game.status == Status.WAITING.value:
+            game.status = Status.RESERVED.value
+        else:
+            game.status = Status.STARTED.value
+        await sync_to_async(game.save)()
+        self.players[f"{user.id}"] = f"{game.id}"
+        if self.games.get(f"{game.id}") is None:
+            self.games[f"{game.id}"] = copy.deepcopy(self.games[0])
+        self.games[f"{game.id}"]['id'] = game.id
+        self.games[f"{game.id}"]["status"] = game.status
+        self.games[f"{game.id}"][f"player{await sync_to_async(game.get_player_number)(user)}"]['id'] = user.id
+        self.games[f"{game.id}"][f"player{await sync_to_async(game.get_player_number)(user)}"]['username'] = user.username
+        self.room_group_name = f"{prefix}-{game.id}"
+        await get_channel_layer().group_add(
+            self.room_group_name,
+            self.channel_name
+        )
+        await self.channel_layer.group_send(
+            self.room_group_name,
+            {
+                "type": "game_infos",
+                "action": "joined",
+                "game": self.games[f"{game.id}"]
+            }
+        )
+        if game.status == Status.STARTED.value:
+            task = asyncio.create_task(self.game_loop({
+                "game": self.games[f"{game.id}"]
+            }))
+            self.tasks[f"{game.id}"] = task
 
     async def invite_friend(self, data, user):
         invited_user = await self.get_user_by_username(data.get('username'))
@@ -278,33 +331,21 @@ class GameConsumer(AsyncWebsocketConsumer):
             return
 
         game = await sync_to_async(game.first)()
-        if game is not None:
-            if game.tournament is None:
-                await sync_to_async(game.leave_game)(user)
-                self.games[f"{game.id}"]['status'] = game.status
-                self.games[f"{game.id}"]['winner'] = game.winner.id
-                await self.channel_layer.group_send(
-                    f"{prefix}-{game.id}",
-                    {
-                        "type": "game_infos",
-                        "action": "finished",
-                        "game": self.games[f"{game.id}"]
-                    }
-                )
-            elif game.status in [Status.RESERVED.value, Status.STARTED.value]:
-                await sync_to_async(game.leave_game)(user)
-                self.games[f"{game.id}"]['status'] = game.status
-                self.games[f"{game.id}"]['winner'] = game.winner.id
-                await self.channel_layer.group_send(
-                    f"{prefix}-{game.id}",
-                    {
-                        "type": "game_infos",
-                        "action": "finished",
-                        "game": self.games[f"{game.id}"]
-                    }
-                )
-        else:
+        if game is None:
             return
+        tournament = await sync_to_async(game.get_tournament)()
+        if tournament is None or game.status in [Status.RESERVED.value, Status.STARTED.value]:
+            await sync_to_async(game.leave_game)(user, tournament is None)
+            self.games[f"{game.id}"]['status'] = game.status
+            self.games[f"{game.id}"]['winner'] = game.winner.id
+            await self.channel_layer.group_send(
+                f"{prefix}-{game.id}",
+                {
+                    "type": "game_infos",
+                    "action": "finished",
+                    "game": self.games[f"{game.id}"]
+                }
+            )
 
         game_id = self.players.get(f"{user.id}")
 
@@ -312,9 +353,12 @@ class GameConsumer(AsyncWebsocketConsumer):
             f"{prefix}-{game_id}",
             self.channel_name
         )
-        self.players.pop(f"{user.id}")
-        self.games.pop(f"{game_id}")
-        self.tasks.get(f"{game_id}").cancel()
+        if self.players.get(f"{user.id}"):
+            self.players.pop(f"{user.id}")
+        if self.games.get(f"{game_id}"):
+            self.games.pop(f"{game_id}")
+        if self.tasks.get(f"{game_id}"):
+            self.tasks.get(f"{game_id}").cancel()
         return super().disconnect(close_code)
 
     async def game_loop(self, event):
