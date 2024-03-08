@@ -6,6 +6,8 @@ import logging  # error
 
 from django.db.models import QuerySet
 
+from game.status import Status
+
 MIN_PARTICIPANTS = 3
 MAX_PARTICIPANTS = 20
 
@@ -239,6 +241,13 @@ class Tournament(models.Model):
 
             winner.save()
             loser.save()
+
+    def check_next_phase(self):
+        for match in self.current_matches:
+            if match.status != Status.FINISHED.value:
+                return False
+
+        self.start_next_phase()
 
 
 # class Match(models.Model):
