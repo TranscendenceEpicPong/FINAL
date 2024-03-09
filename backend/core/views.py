@@ -53,6 +53,7 @@ def index(request):
         "id": user.id,
         "username": user.username,
         "avatar": user.avatar,
+        "status": user.status,
     }, status=200)
 
 

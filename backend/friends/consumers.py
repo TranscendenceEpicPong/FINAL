@@ -88,10 +88,12 @@ class FriendConsumer(WebsocketConsumer):
             "sender": {
                 "username": owner.username,
                 "avatar": owner.avatar,
+                "status": owner.status,
             },
             "receiver": {
                 "username": user.username,
                 "avatar": user.avatar,
+                "status": user.status,
             },
             "action": action
         }
