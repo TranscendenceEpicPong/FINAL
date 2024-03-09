@@ -15,6 +15,10 @@ import jwt
 from backend.settings import env
 import io
 from .status import StatusLoginError, StatusLogin
+import requests
+from django.shortcuts import redirect
+from django.http import JsonResponse
+from core.models import EpicPongUser
 
 def perform_auth(request, creds) -> Tuple[JsonResponse, EpicPongUser]:
     user = django_authenticate(request,
@@ -61,7 +65,6 @@ def login(request):
     response, _ = perform_auth(request, form.cleaned_data)
     return response
 
-
 @require_POST
 def register(request):
     try:
@@ -85,3 +88,53 @@ def logout(request):
     response = JsonResponse({"status": "success", "message": "Successfully logged out !"})
     response.delete_cookie('authorization')
     return response
+
+def login42(request):
+    authorize_url = f"{env('AUTHORIZE_URL')}?client_id={env('CLIENT_ID')}&redirect_uri={env('REDIRECT_URI')}&response_type=code"
+    return redirect(authorize_url)
+
+def login42_callback(request):
+    # recup code
+    code = request.GET.get('code')
+
+    # code contre token
+    token_payload = {
+        "grant_type": "authorization_code",
+        "client_id": env('CLIENT_ID'),
+        "client_secret": env('CLIENT_SECRET'),
+        "code": code,
+        "redirect_uri": env('REDIRECT_URI')
+    }
+    response = requests.post(env('TOKEN_URL'), data=token_payload)
+
+    if response.status_code != 200:
+        return JsonResponse({"error": "Failed to obtain access token"})
+    
+    access_token = response.json()['access_token']
+    
+    # récup infos user
+    user_info_response = requests.get('https://api.intra.42.fr/v2/me', headers={'Authorization': 'Bearer ' + access_token})
+    
+    if user_info_response.status_code != 200:
+        return JsonResponse({"error": "Failed to obtain user info from 42 API"})
+        
+    user_info = user_info_response.json()
+    username_42 = user_info.get('login')
+    id42 = f"{user_info.get('id')}"
+    photo = user_info.get('image', {}).get('link', '')
+
+    # check si register ou create
+    try:
+        user = EpicPongUser.objects.get(id42=id42)
+    except EpicPongUser.DoesNotExist:
+        username = username_42
+        if EpicPongUser.objects.filter(username=username).first():
+            i = 2
+            while EpicPongUser.objects.filter(username=username).exists():
+                username = f"{username_42}_{str(i)}"
+                i += 1
+        user = EpicPongUser.objects.create_user(id42=id42, username=username, password=env('PASSWORD_42AUTH'), avatar=photo)
+
+    auth_response, user = perform_auth(request, {'username':user.username, 'password':env('PASSWORD_42AUTH')})
+    
+    return auth_response

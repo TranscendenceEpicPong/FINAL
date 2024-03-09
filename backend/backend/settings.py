@@ -27,14 +27,20 @@ env = environ.Env(
     MYPY_DJANGO_CONFIG=(str, './mypy.ini'),
     CORS_ALLOWED_ORIGINS=(list, ["http://localhost:8080", "http://localhost", "http://10.0.0.3:8080", "http://10.0.0.3:8000", "http://10.0.0.3:8080", "http://10.0.0.3:8000", f"http://{LOCAL_IP}:8080", f"http://{LOCAL_IP}:8000"]),
     JWT_SECRET=(str, 'SECRET'),
+    PASSWORD_42AUTH=(str, ''),
     APP_NAME=(str, 'EpicPong'),
+    CLIENT_ID=(str, "u-s4t2ud-ba30256e8d43ec186c62b98c28d1db0a9169d279f7e85d1a4daa5cb986af0b2b"),
+    CLIENT_SECRET=(str, "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"),
+    REDIRECT_URI=(str, "http://localhost:8000/authentication/42-register/"),
+    AUTHORIZE_URL=(str, "https://api.intra.42.fr/oauth/authorize"),
+    TOKEN_URL=(str, "https://api.intra.42.fr/oauth/token")
 )
 
 CORS_ALLOWED_ORIGINS = env('CORS_ALLOWED_ORIGINS')
 CORS_ALLOW_HEADERS = [*default_headers, 'X-CSRFToken']
 CORS_ALLOW_CREDENTIALS = True
 
-UNAUTHENTICATED_REQUESTS = ['/authentication/login', '/authentication/register', '/server_info/']
+UNAUTHENTICATED_REQUESTS = ['/authentication/login', '/authentication/register', '/server_info/', '/authentication/42-register/', '/authentication/login42']
 
 CSRF_TRUSTED_ORIGINS = ["http://localhost:8080", "http://localhost:8000", "http://10.0.0.3:8080", "http://10.0.0.3:8000", "http://10.0.0.3:8000", "http://10.0.0.3:8080", f"http://{LOCAL_IP}:8080", f"http://{LOCAL_IP}:8000"]
 CSRF_COOKIE_DOMAIN = f"{LOCAL_IP}"
