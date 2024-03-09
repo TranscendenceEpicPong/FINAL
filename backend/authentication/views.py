@@ -101,6 +101,7 @@ def login42(request):
     authorize_url = f"{env('AUTHORIZE_URL')}?client_id={env('CLIENT_ID')}&redirect_uri={env('REDIRECT_URI')}&response_type=code"
     return redirect(authorize_url)
 
+
 def login42_callback(request):
     # recup code
     code = request.GET.get('code')

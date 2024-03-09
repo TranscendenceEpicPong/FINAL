@@ -29,9 +29,9 @@ env = environ.Env(
     JWT_SECRET=(str, 'SECRET'),
     PASSWORD_42AUTH=(str, ''),
     APP_NAME=(str, 'EpicPong'),
-    CLIENT_ID=(str, "u-s4t2ud-ba30256e8d43ec186c62b98c28d1db0a9169d279f7e85d1a4daa5cb986af0b2b"),
-    CLIENT_SECRET=(str, "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"),
-    REDIRECT_URI=(str, "http://localhost:8000/authentication/42-register/"),
+    CLIENT_ID=(str, "u-s4t2ud-7059e1e90cb7aec3191717d4260819c886899256f2c3267e7b742b0b65471ae6"),
+    CLIENT_SECRET=(str, "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"),
+    REDIRECT_URI=(str, "http://10.0.0.3:8080/auth/42-register"),
     AUTHORIZE_URL=(str, "https://api.intra.42.fr/oauth/authorize"),
     TOKEN_URL=(str, "https://api.intra.42.fr/oauth/token")
 )
