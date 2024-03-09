@@ -90,7 +90,6 @@ def register(request):
 
 
 @require_POST
-@login_required
 def logout(request):
     django_logout(request)
     response = JsonResponse({"status": "success", "message": "Successfully logged out !"})
