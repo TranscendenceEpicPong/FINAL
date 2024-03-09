@@ -55,6 +55,8 @@ class TokenAuthMiddleware(BaseMiddleware):
         decoded_token = decode_token(token)
         session = await sync_to_async(Session.objects.get)(session_key=sessionid)
         user_id = session.get_decoded().get('_auth_user_id')
+        if user_id:
+            user_id = int(user_id)
         scope['user'] = AnonymousUser()
         if user_id == decoded_token.get('id'):
             scope['user'] = await get_user(user_id)
