@@ -180,12 +180,7 @@ def enable_2fa(request):
 @require_POST
 def disable_2fa(request):
     user = cast(EpicPongUser, request.user)
-    try:
-        raw_data = json.loads(request.body)
-    except json.JSONDecodeError:
-        return get_response({"message": "Invalid JSON", "status": 400})
-
-    disable_2fa =  user.deactivate_2fa(raw_data.get('password'))
+    disable_2fa =  user.deactivate_2fa()
     if disable_2fa != A2FStatus.SUCCESS_DEACTIVATED.value:
         return get_response(disable_2fa)
 

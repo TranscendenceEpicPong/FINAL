@@ -54,11 +54,9 @@ class EpicPongUser(AbstractUser):
             return A2FStatus.VALIDATED.value
         return A2FStatus.WRONG_CODE.value
 
-    def deactivate_2fa(self, password):
+    def deactivate_2fa(self):
         if not self.a2f_enabled:
             return A2FStatus.NOT_ACTIVATED.value
-        if not self.check_password(password):
-            return A2FStatus.WRONG_PASSWORD.value
         self.a2f_enabled = False
         self.save()
         return A2FStatus.SUCCESS_DEACTIVATED.value
