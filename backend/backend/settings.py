@@ -41,6 +41,7 @@ CORS_ALLOW_HEADERS = [*default_headers, 'X-CSRFToken']
 CORS_ALLOW_CREDENTIALS = True
 
 UNAUTHENTICATED_REQUESTS = ['/authentication/login', '/authentication/register', '/server_info/', '/authentication/42-register/', '/authentication/login42']
+UNAUTHENTICATED_2FA_REQUESTS = ['/authentication/check-code','/authentication/logout']
 
 CSRF_TRUSTED_ORIGINS = ["http://localhost:8080", "http://localhost:8000", "http://10.0.0.3:8080", "http://10.0.0.3:8000", "http://10.0.0.3:8000", "http://10.0.0.3:8080", f"http://{LOCAL_IP}:8080", f"http://{LOCAL_IP}:8000"]
 CSRF_COOKIE_DOMAIN = f"{LOCAL_IP}"
