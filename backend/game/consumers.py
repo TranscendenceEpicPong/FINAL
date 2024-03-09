@@ -1,6 +1,6 @@
 import json
 from channels.generic.websocket import AsyncWebsocketConsumer
-from asgiref.sync import sync_to_async
+from asgiref.sync import sync_to_async, async_to_sync
 import jwt
 from backend.settings import env
 from core.models import EpicPongUser
@@ -24,6 +24,22 @@ def decode_query_string(query_string):
         return infos_json
     except Exception:
         return None
+
+def send_to_friend(user):
+    friends = Friends.objects.filter(user=user)
+    channel_layer = get_channel_layer()
+    for friend in friends:
+        async_to_sync(channel_layer.group_send)(
+            f"core-{friend.friend.id}",
+            {
+                'type': 'update_status',
+                'status': user.status,
+                'user': {
+                    'id': user.id,
+                    'username': user.username,
+                }
+            }
+        )
 
 class GameConsumer(AsyncWebsocketConsumer):
     players = {}
@@ -250,6 +266,12 @@ class GameConsumer(AsyncWebsocketConsumer):
             }
         )
 
+    async def update_user_status(self, userId, status):
+        user = await self.get_user(userId)
+        user.status = status
+        await sync_to_async(user.save)()
+        await sync_to_async(send_to_friend)(user)
+
     async def get_user(self, userId):
         user = await sync_to_async(EpicPongUser.objects.filter)(id=userId)
         if await sync_to_async(user.count)() == 0:
@@ -266,6 +288,7 @@ class GameConsumer(AsyncWebsocketConsumer):
         else:
             game = await sync_to_async(game.first)()
             await self.join_game(game, 2, user)
+        await self.update_user_status(user.id, "in_game")
 
     async def create_game(self, user):
         game = await sync_to_async(Game.objects.create)(player1=user)
@@ -347,6 +370,11 @@ class GameConsumer(AsyncWebsocketConsumer):
                 }
             )
 
+        playerId = game.player1.id
+        if game.player1.id == user.id:
+            playerId = game.player2.id
+        await self.update_user_status(playerId, "online")
+
         game_id = self.players.get(f"{user.id}")
 
         await self.channel_layer.group_discard(
@@ -401,6 +429,8 @@ class GameConsumer(AsyncWebsocketConsumer):
                 self.room_group_name,
                 self.channel_name
             )
+            await self.update_user_status(self.games[f"{game_id}"]["player1"]["id"], "online")
+            await self.update_user_status(self.games[f"{game_id}"]["player2"]["id"], "online")
             self.players.pop(f"{game['player1']['id']}")
             self.games.pop(f"{game_id}")
 
