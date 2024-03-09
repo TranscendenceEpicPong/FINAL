@@ -8,6 +8,7 @@ from core.models import EpicPongUser
 from django.contrib.sessions.models import Session
 from django.middleware import common
 import json
+from django.contrib.auth.models import AnonymousUser
 
 prefix = "friends"
 
@@ -20,6 +21,9 @@ def decode_query_string(query_string):
 
 class FriendConsumer(WebsocketConsumer):
     def connect(self):
+        if self.scope['user'] == AnonymousUser():
+            self.close()
+            return
         infos_json = decode_query_string(self.scope['query_string'])
         if infos_json is None:
             self.close()

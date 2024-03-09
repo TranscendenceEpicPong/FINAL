@@ -8,6 +8,7 @@ from backend.settings import env
 from friends.service import FriendService
 from core.models import EpicPongUser
 from .models import Chats
+from django.contrib.auth.models import AnonymousUser
 
 prefix = "chats"
 
@@ -20,6 +21,10 @@ def decode_query_string(query_string):
 
 class ChatConsumer(WebsocketConsumer):
     def connect(self):
+        if self.scope['user'] == AnonymousUser():
+            self.close()
+            return
+
         infos_json = decode_query_string(self.scope['query_string'])
         if infos_json is None:
             self.close()

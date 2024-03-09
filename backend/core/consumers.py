@@ -7,6 +7,7 @@ from core.models import EpicPongUser
 from django.db.models import Q
 from friends.models import Friends
 from channels.layers import get_channel_layer
+from django.contrib.auth.models import AnonymousUser
 
 prefix = "core"
 
@@ -35,6 +36,9 @@ def send_to_friend(user):
 
 class CoreConsumer(AsyncWebsocketConsumer):
     async def connect(self):
+        if self.scope['user'] == AnonymousUser():
+            self.close()
+            return
         infos_json = decode_query_string(self.scope['query_string'])
         if infos_json is None:
             self.close()

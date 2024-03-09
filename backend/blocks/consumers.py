@@ -5,6 +5,7 @@ import jwt
 from backend.settings import env
 from blocks.service import BlockService
 from core.models import EpicPongUser
+from django.contrib.auth.models import AnonymousUser
 
 prefix = "blocks"
 
@@ -17,6 +18,9 @@ def decode_query_string(query_string):
 
 class BlockConsumer(WebsocketConsumer):
     def connect(self):
+        if self.scope['user'] == AnonymousUser():
+            self.close()
+            return
         infos_json = decode_query_string(self.scope['query_string'])
         if infos_json is None:
             self.close()

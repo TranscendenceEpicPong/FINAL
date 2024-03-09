@@ -16,6 +16,7 @@ from blocks import routing as block_routing
 from chats import routing as chat_routing
 from game import routing as game_routing
 from core import routing as core_routing
+from authentication.websocket_middleware import TokenAuthMiddleware
 
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'backend.settings')
 
@@ -24,11 +25,13 @@ django_asgi_application = get_asgi_application()
 application = ProtocolTypeRouter({
     "http": django_asgi_application,
     "websocket": 
-        URLRouter([
-            *friend_routing.websocket_urlpatterns,
-            *block_routing.websocket_urlpatterns,
-            *game_routing.websocket_urlpatterns,
-            *chat_routing.websocket_urlpatterns,
-            *core_routing.websocket_urlpatterns,
-        ])
+        TokenAuthMiddleware(
+            URLRouter([
+                *friend_routing.websocket_urlpatterns,
+                *block_routing.websocket_urlpatterns,
+                *game_routing.websocket_urlpatterns,
+                *chat_routing.websocket_urlpatterns,
+                *core_routing.websocket_urlpatterns,
+            ])
+        )
 })
