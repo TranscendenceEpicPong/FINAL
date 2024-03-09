@@ -15,6 +15,7 @@ from .utils import get_paddle_bottom, get_paddle_top
 from channels.layers import get_channel_layer
 from friends.models import Friends
 from tournament_app.models import Tournament
+from django.contrib.auth.models import AnonymousUser
 
 prefix = "game"
 
@@ -49,6 +50,9 @@ class GameConsumer(AsyncWebsocketConsumer):
     }
 
     async def connect(self):
+        if self.scope['user'] == AnonymousUser():
+            self.close()
+            return
         infos_json = decode_query_string(self.scope['query_string'])
         if infos_json is None:
             self.close()
