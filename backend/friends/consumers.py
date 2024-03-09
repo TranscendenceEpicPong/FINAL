@@ -81,32 +81,52 @@ class FriendConsumer(WebsocketConsumer):
             }))
             return
 
-        data_to_send = {
+        sender = {
+            "username": owner.username,
+            "avatar": owner.avatar,
+            "status": owner.status,
+        }
+
+        receiver = {
+            "username": user.username,
+            "avatar": user.avatar,
+            "status": user.status,
+        }
+
+        data_to_owner = {
             'type':'add_friend',
             'message': status['message'],
             "status": status['status'],
-            "sender": {
-                "username": owner.username,
-                "avatar": owner.avatar,
-                "status": owner.status,
-            },
-            "receiver": {
-                "username": user.username,
-                "avatar": user.avatar,
-                "status": user.status,
-            },
+            "sender": sender,
+            "receiver": receiver,
+            "action": action
+        }
+
+        data_to_user = {
+            'type':'add_friend',
+            'message': status['message'],
+            "status": status['status'],
+            "sender": receiver,
+            "receiver": sender,
             "action": action
         }
 
         async_to_sync(self.channel_layer.group_send)(
-            f"{prefix}-{user.id}",
-            data_to_send
+            f"{prefix}-{infos_json['id']}",
+            data_to_owner
         )
 
-        async_to_sync(self.channel_layer.group_send)(
-            f"{prefix}-{infos_json['id']}",
-            data_to_send
-        )
+        if action == 'add':
+            async_to_sync(self.channel_layer.group_send)(
+                f"{prefix}-{user.id}",
+                data_to_owner
+            )
+        else:
+            async_to_sync(self.channel_layer.group_send)(
+                f"{prefix}-{user.id}",
+                data_to_user
+            )
+
 
     def add_friend(self, event):
         self.send(text_data=json.dumps(event))
