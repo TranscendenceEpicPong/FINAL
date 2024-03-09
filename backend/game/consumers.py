@@ -107,6 +107,13 @@ class GameConsumer(AsyncWebsocketConsumer):
         }))
         return
 
+    async def already_invited(self):
+        await self.send(text_data=json.dumps({
+            'type': 'error',
+            "message": "Ami déjà invité."
+        }))
+        return
+
     async def join_tournament_game(self, data, user):
         invited_user = await self.get_user_by_username(data.get('username'))
         if invited_user is None:
@@ -162,8 +169,12 @@ class GameConsumer(AsyncWebsocketConsumer):
         game = await sync_to_async(Game.objects.filter)(Q(player1=user) | Q(player2=user), Q(status=Status.WAITING.value) | Q(status=Status.STARTED.value), tournament__isnull=True)
         if await sync_to_async(game.count)() > 0:
             return await self.already_in_game()
+        
+        game = await sync_to_async(Game.objects.filter)(Q(player1=user, player2=invited_user), status=Status.RESERVED.value, tournament__isnull=True)
+        if await sync_to_async(game.count)() > 0:
+            return await self.already_invited()
 
-        game = await sync_to_async(Game.objects.filter)(Q(player1=user, player2=invited_user) | Q(player1=invited_user,player2=user), status=Status.RESERVED.value, tournament__isnull=True)
+        game = await sync_to_async(Game.objects.filter)(Q(player1=invited_user, player2=user), status=Status.RESERVED.value, tournament__isnull=True)
         if await sync_to_async(game.count)() > 0:
             game = await sync_to_async(game.first)()
             await self.join_game(game, 2, user)
