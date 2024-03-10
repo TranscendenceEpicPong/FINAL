@@ -53,11 +53,15 @@ class TokenAuthMiddleware(BaseMiddleware):
         token = get_cookie(headers.get(b'cookie'), 'authorization')
         sessionid = get_cookie(headers.get(b'cookie'), 'sessionid')
         decoded_token = decode_token(token)
-        session = await sync_to_async(Session.objects.get)(session_key=sessionid)
+        session = await sync_to_async(Session.objects.filter)(session_key=sessionid)
+        session = await sync_to_async(session.first)()
+        scope['user'] = AnonymousUser()
+        if not session:
+            return await super().__call__(scope, receive, send)
+
         user_id = session.get_decoded().get('_auth_user_id')
         if user_id:
             user_id = int(user_id)
-        scope['user'] = AnonymousUser()
         if user_id == decoded_token.get('id'):
             scope['user'] = await get_user(user_id)
         return await super().__call__(scope, receive, send)
