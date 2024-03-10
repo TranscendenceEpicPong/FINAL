@@ -261,6 +261,8 @@ class GameConsumer(AsyncWebsocketConsumer):
         game = self.games.get(f"{game_id}")
         if game is None:
             return
+        if game.get('status') != Status.STARTED.value:
+            return
 
         player = game["player1"]
         if game['player1']['id'] != user.id:
@@ -386,14 +388,14 @@ class GameConsumer(AsyncWebsocketConsumer):
             )
 
         ids = {
-            f"player1": f"{await sync_to_async(game.get_player)(1)}",
-            f"player2": f"{await sync_to_async(game.get_player)(2)}",
+            f"player1": await sync_to_async(game.get_player)(1),
+            f"player2": await sync_to_async(game.get_player)(2),
         }
 
-        playerId = ids.get('player1').get('id')
-        if ids.get('player1').get('id') == user.id:
-            playerId = ids.get('player2').get('id')
-        await self.update_user_status(playerId, "online")
+        player = ids.get('player1')
+        if ids.get('player1') == user:
+            player = ids.get('player2')
+        await self.update_user_status(player.id, "online")
 
         game_id = self.players.get(f"{user.id}")
 
