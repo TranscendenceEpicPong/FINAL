@@ -66,6 +66,11 @@ class Game(models.Model):
             return 1
         return 2
 
+    def get_player(self, number):
+        if number == 1:
+            return self.player1
+        return self.player2
+
     def get_winner(self):
         if self.status != Status.FINISHED.value:
             return None

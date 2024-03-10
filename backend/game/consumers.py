@@ -178,6 +178,10 @@ class GameConsumer(AsyncWebsocketConsumer):
         if await sync_to_async(game.count)() > 0:
             return await self.already_invited()
 
+        game = await sync_to_async(Game.objects.filter)(player1=user, status=Status.RESERVED.value, tournament__isnull=True)
+        if await sync_to_async(game.count)() > 0:
+            await sync_to_async(game.delete)()
+
         game = await sync_to_async(Game.objects.filter)(Q(player1=invited_user, player2=user), status=Status.RESERVED.value, tournament__isnull=True)
         if await sync_to_async(game.count)() > 0:
             game = await sync_to_async(game.first)()
@@ -261,6 +265,8 @@ class GameConsumer(AsyncWebsocketConsumer):
         game = self.games.get(f"{game_id}")
         if game is None:
             return
+        if game.get('status') != Status.STARTED.value:
+            return
 
         player = game["player1"]
         if game['player1']['id'] != user.id:
@@ -297,6 +303,11 @@ class GameConsumer(AsyncWebsocketConsumer):
         game = await sync_to_async(Game.objects.filter)(Q(player1=user) | Q(player2=user), Q(status=Status.WAITING.value) | Q(status=Status.STARTED.value))
         if await sync_to_async(game.count)() > 0:
             return await self.already_in_game()
+
+        game = await sync_to_async(Game.objects.filter)(player1=user, status=Status.RESERVED.value)
+        if await sync_to_async(game.count)() > 0:
+            await sync_to_async(game.delete)()
+
         game = await sync_to_async(Game.objects.filter)(player2__isnull=True, tournament__isnull=True)
         if await sync_to_async(game.count)() == 0:
             await self.create_game(user)
@@ -357,6 +368,14 @@ class GameConsumer(AsyncWebsocketConsumer):
     async def game_infos(self, event):
         await self.send(text_data=json.dumps(event))
 
+    def delete_not_started_games(self, user):
+        game = Game.objects.filter(Q(player1=user) | Q(player2=user), Q(status=Status.WAITING.value) | Q(status=Status.RESERVED.value))
+        if game.count() == 0:
+            return
+        game = game.all()
+        for g in game:
+            g.delete()
+
     async def disconnect(self, close_code):
         infos_json = decode_query_string(self.scope['query_string'])
         user = await self.get_user(infos_json['id'])
@@ -364,7 +383,9 @@ class GameConsumer(AsyncWebsocketConsumer):
         if user is None:
             return
 
-        game = await sync_to_async(Game.objects.filter)(Q(player1=user) | Q(player2=user), Q(status=Status.WAITING.value) | Q(status=Status.STARTED.value))
+        await sync_to_async(self.delete_not_started_games)(user)
+
+        game = await sync_to_async(Game.objects.filter)(Q(player1=user) | Q(player2=user), status=Status.STARTED.value)
         if await sync_to_async(game.count)() == 0:
             return
 
@@ -374,21 +395,28 @@ class GameConsumer(AsyncWebsocketConsumer):
         tournament = await sync_to_async(game.get_tournament)()
         if tournament is None or game.status in [Status.RESERVED.value, Status.STARTED.value]:
             await sync_to_async(game.leave_game)(user, tournament is None)
-            self.games[f"{game.id}"]['status'] = game.status
-            self.games[f"{game.id}"]['winner'] = game.winner.id
-            await self.channel_layer.group_send(
-                f"{prefix}-{game.id}",
-                {
-                    "type": "game_infos",
-                    "action": "finished",
-                    "game": self.games[f"{game.id}"]
-                }
-            )
+            if self.games.get(f"{game.id}"):
+                self.games[f"{game.id}"]['status'] = game.status
+                self.games[f"{game.id}"]['winner'] = game.winner.id
+                await self.channel_layer.group_send(
+                    f"{prefix}-{game.id}",
+                    {
+                        "type": "game_infos",
+                        "action": "finished",
+                        "game": self.games[f"{game.id}"]
+                    }
+                )
 
-        playerId = game.player1.id
-        if game.player1.id == user.id:
-            playerId = game.player2.id
-        await self.update_user_status(playerId, "online")
+        ids = {
+            f"player1": await sync_to_async(game.get_player)(1),
+            f"player2": await sync_to_async(game.get_player)(2),
+        }
+
+        player = ids.get('player1')
+        if ids.get('player1') == user:
+            player = ids.get('player2')
+        if player:
+            await self.update_user_status(player.id, "online")
 
         game_id = self.players.get(f"{user.id}")
 
