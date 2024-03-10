@@ -385,9 +385,14 @@ class GameConsumer(AsyncWebsocketConsumer):
                 }
             )
 
-        playerId = game.player1.id
-        if game.player1.id == user.id:
-            playerId = game.player2.id
+        ids = {
+            f"player1": f"{await sync_to_async(game.get_player)(1)}",
+            f"player2": f"{await sync_to_async(game.get_player)(2)}",
+        }
+
+        playerId = ids.get('player1').get('id')
+        if ids.get('player1').get('id') == user.id:
+            playerId = ids.get('player2').get('id')
         await self.update_user_status(playerId, "online")
 
         game_id = self.players.get(f"{user.id}")
