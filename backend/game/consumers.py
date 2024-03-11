@@ -369,7 +369,7 @@ class GameConsumer(AsyncWebsocketConsumer):
         await self.send(text_data=json.dumps(event))
 
     def delete_not_started_games(self, user):
-        game = Game.objects.filter(Q(player1=user) | Q(player2=user), Q(status=Status.WAITING.value) | Q(status=Status.RESERVED.value))
+        game = Game.objects.filter(Q(player1=user) | Q(player2=user), Q(status=Status.WAITING.value) | Q(status=Status.RESERVED.value), tournament__isnull=True)
         if game.count() == 0:
             return
         game = game.all()
@@ -384,6 +384,7 @@ class GameConsumer(AsyncWebsocketConsumer):
             return
 
         await sync_to_async(self.delete_not_started_games)(user)
+        await self.update_user_status(user.id, "online")
 
         game = await sync_to_async(Game.objects.filter)(Q(player1=user) | Q(player2=user), status=Status.STARTED.value)
         if await sync_to_async(game.count)() == 0:
