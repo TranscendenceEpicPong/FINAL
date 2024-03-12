@@ -404,8 +404,9 @@ class GameConsumer(AsyncWebsocketConsumer):
         game = await sync_to_async(game.first)()
         if game is None:
             return
+
         tournament = await sync_to_async(game.get_tournament)()
-        if tournament is None or game.status in [Status.RESERVED.value, Status.STARTED.value]:
+        if game.status == Status.STARTED.value:
             await sync_to_async(game.leave_game)(user, tournament is None)
             if self.games.get(f"{game.id}"):
                 self.games[f"{game.id}"]['status'] = game.status
@@ -418,6 +419,14 @@ class GameConsumer(AsyncWebsocketConsumer):
                         "game": self.games[f"{game.id}"]
                     }
                 )
+                await self.reset_user(user)
+        elif game.status == Status.RESERVED.value:
+            if tournament:
+                game.status = Status.WAITING.value
+                await sync_to_async(game.save)()
+            else:
+                await sync_to_async(game.delete)()
+            await self.reset_user(user)
 
         ids = {
             f"player1": await sync_to_async(game.get_player)(1),
@@ -430,19 +439,22 @@ class GameConsumer(AsyncWebsocketConsumer):
         if player:
             await self.update_user_status(player.id, "online")
 
-        game_id = self.players.get(f"{user.id}")
+        await self.reset_user(player)
+        return super().disconnect(close_code)
+
+    async def reset_user(self, user):
+        game = self.players.get(f"{user.id}")
 
         await self.channel_layer.group_discard(
-            f"{prefix}-{game_id}",
+            f"{prefix}-{game}",
             self.channel_name
         )
         if self.players.get(f"{user.id}"):
             self.players.pop(f"{user.id}")
-        if self.games.get(f"{game_id}"):
-            self.games.pop(f"{game_id}")
-        if self.tasks.get(f"{game_id}"):
-            self.tasks.get(f"{game_id}").cancel()
-        return super().disconnect(close_code)
+        if self.games.get(f"{game}"):
+            self.games.pop(f"{game}")
+        if self.tasks.get(f"{game}"):
+            self.tasks.get(f"{game}").cancel()
 
     async def game_loop(self, event):
         game = event['game']
