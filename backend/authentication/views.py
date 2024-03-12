@@ -1,7 +1,5 @@
 import json
 from typing import Tuple, cast
-from django.contrib.auth.decorators import login_required
-from django.http import JsonResponse
 from django.views.decorators.http import require_POST, require_http_methods
 import datetime
 from django.contrib.auth import \
@@ -9,18 +7,16 @@ from django.contrib.auth import \
     login as django_login, \
     logout as django_logout, \
     get_user_model
-from core.models import EpicPongUser
 from .forms import UserRegisterForm, UserLoginForm
 import jwt
 from backend.settings import env
-import io
-from .status import StatusLoginError, StatusLogin
 import requests
 from django.shortcuts import redirect
 from django.http import JsonResponse
 from core.models import EpicPongUser
 from core.helpers import get_response
 from core.status import A2FStatus
+
 
 def create_token(user: EpicPongUser, a2f_verified: bool) -> str:
     return jwt.encode({
@@ -73,6 +69,7 @@ def login(request):
     response, _ = perform_auth(request, form.cleaned_data)
     return response
 
+
 @require_POST
 def register(request):
     try:
@@ -96,6 +93,7 @@ def logout(request):
     response.delete_cookie('authorization')
     return response
 
+
 def login42(request):
     authorize_url = f"{env('AUTHORIZE_URL')}?client_id={env('CLIENT_ID')}&redirect_uri={env('REDIRECT_URI')}&response_type=code"
     return redirect(authorize_url)
@@ -117,15 +115,16 @@ def login42_callback(request):
 
     if response.status_code != 200:
         return JsonResponse({"error": "Failed to obtain access token"})
-    
+
     access_token = response.json()['access_token']
-    
+
     # récup infos user
-    user_info_response = requests.get('https://api.intra.42.fr/v2/me', headers={'Authorization': 'Bearer ' + access_token})
-    
+    user_info_response = requests.get('https://api.intra.42.fr/v2/me',
+                                      headers={'Authorization': 'Bearer ' + access_token})
+
     if user_info_response.status_code != 200:
         return JsonResponse({"error": "Failed to obtain user info from 42 API"})
-        
+
     user_info = user_info_response.json()
     username_42 = user_info.get('login')
     id42 = f"{user_info.get('id')}"
@@ -141,11 +140,13 @@ def login42_callback(request):
             while EpicPongUser.objects.filter(username=username).exists():
                 username = f"{username_42}_{str(i)}"
                 i += 1
-        user = EpicPongUser.objects.create_user(id42=id42, username=username, password=env('PASSWORD_42AUTH'), avatar=photo)
+        user = EpicPongUser.objects.create_user(id42=id42, username=username, password=env('PASSWORD_42AUTH'),
+                                                avatar=photo)
 
-    auth_response, user = perform_auth(request, {'username':user.username, 'password':env('PASSWORD_42AUTH')})
-    
+    auth_response, user = perform_auth(request, {'username': user.username, 'password': env('PASSWORD_42AUTH')})
+
     return auth_response
+
 
 @require_http_methods('GET')
 def request_code(request):
@@ -161,7 +162,7 @@ def enable_2fa(request):
     except json.JSONDecodeError:
         return get_response({"message": "Invalid JSON", "status": 400})
 
-    activated_2fa =  user.activate_2fa(raw_data.get('code'))
+    activated_2fa = user.activate_2fa(raw_data.get('code'))
     if activated_2fa != A2FStatus.SUCCESS_ACTIVATED.value:
         return get_response(activated_2fa)
 
@@ -179,7 +180,7 @@ def enable_2fa(request):
 @require_POST
 def disable_2fa(request):
     user = cast(EpicPongUser, request.user)
-    disable_2fa =  user.deactivate_2fa()
+    disable_2fa = user.deactivate_2fa()
     if disable_2fa != A2FStatus.SUCCESS_DEACTIVATED.value:
         return get_response(disable_2fa)
 
@@ -202,7 +203,7 @@ def check_code(request):
     except json.JSONDecodeError:
         return get_response({"message": "Invalid JSON", "status": 400})
 
-    validated_2fa =  user.check_code(raw_data.get('code'))
+    validated_2fa = user.check_code(raw_data.get('code'))
     if validated_2fa != A2FStatus.VALIDATED.value:
         return get_response(validated_2fa)
 

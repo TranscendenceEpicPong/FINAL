@@ -61,6 +61,8 @@ DEBUG = True
 
 ALLOWED_HOSTS = ["127.0.0.1", "0.0.0.0", "localhost", "10.0.0.34", "10.0.0.3", "localhost", "0.0.0.0", f"{LOCAL_IP}"]
 
+SESSION_SAVE_EVERY_REQUEST = True
+
 # Application definition
 INSTALLED_APPS = [
     'daphne',

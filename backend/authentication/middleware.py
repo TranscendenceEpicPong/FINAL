@@ -1,12 +1,13 @@
 import jwt
-from django.http import HttpResponse, HttpResponseForbidden, HttpRequest, JsonResponse
+from django.http import HttpRequest, JsonResponse
+
+from authentication.views import create_token
 from backend.settings import env
 from django.conf import settings
 from core.helpers import get_response as getJsonResponse
+from core.models import EpicPongUser
+from django.contrib.auth import logout
 
-# TODO: Make a real authentication backend and use JWT for auth
-#       Either add a verify token in httpOnly with a hash containing personal token + server salt
-#       Or make token based authentication using blacklist, token families, refresh etc...
 
 def CustomAuthenticationMiddleware(get_response):
     def middleware(request: HttpRequest):
@@ -22,13 +23,22 @@ def CustomAuthenticationMiddleware(get_response):
         try:
             token = jwt.decode(authorization, env('JWT_SECRET'), algorithms=['HS256'])
         except jwt.PyJWTError:
-            return getJsonResponse({"message": "Wrong token", "status": 401})
+            response = getJsonResponse({"message": "Wrong token", "status": 401})
+            response.delete_cookie('authorization')
+            logout(request)
+            return response
 
-
-        if token.get('a2f_enabled') and not token.get('a2f_verified') and not (request.path in settings.UNAUTHENTICATED_2FA_REQUESTS):
+        if token.get('a2f_enabled') and not token.get('a2f_verified') and not (
+                request.path in settings.UNAUTHENTICATED_2FA_REQUESTS):
             return getJsonResponse({"message": "2FA required", "status": 401})
 
         response: JsonResponse = get_response(request)
+
+        response.set_cookie('authorization',
+                            value=create_token(EpicPongUser(username=request.user.username),
+                                               token.get('a2f_enabled')),
+                            path='/',
+                            samesite='Strict')
 
         return response
 
