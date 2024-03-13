@@ -177,17 +177,21 @@ class GameConsumer(AsyncWebsocketConsumer):
         if await sync_to_async(friend.count)() == 0:
             return await self.not_friend()
 
-        game = await sync_to_async(Game.objects.filter)(Q(player1=user) | Q(player2=user), Q(status=Status.WAITING.value) | Q(status=Status.STARTED.value), tournament__isnull=True)
+        game = await sync_to_async(Game.objects.filter)(Q(player1=user) | Q(player2=user), Q(status=Status.WAITING.value) | Q(status=Status.STARTED.value))
         if await sync_to_async(game.count)() > 0:
             return await self.already_in_game()
         
-        game = await sync_to_async(Game.objects.filter)(Q(player1=user, player2=invited_user), status=Status.RESERVED.value, tournament__isnull=True)
+        game = await sync_to_async(Game.objects.filter)(Q(player1=user, player2=invited_user), status=Status.RESERVED.value)
         if await sync_to_async(game.count)() > 0:
             return await self.already_invited()
 
-        game = await sync_to_async(Game.objects.filter)(player1=user, status=Status.RESERVED.value, tournament__isnull=True)
+        game = await sync_to_async(Game.objects.filter)(player1=user, status=Status.RESERVED.value)
         if await sync_to_async(game.count)() > 0:
-            await sync_to_async(game.delete)()
+            game = await sync_to_async(game.first)()
+            if await sync_to_async(game.get_tournament)() is None:
+                await sync_to_async(game.delete)()
+            else:
+                return await self.in_tournament()
 
         game = await sync_to_async(Game.objects.filter)(Q(player1=invited_user, player2=user), status=Status.RESERVED.value, tournament__isnull=True)
         if await sync_to_async(game.count)() > 0:
