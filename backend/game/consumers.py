@@ -469,7 +469,7 @@ class GameConsumer(AsyncWebsocketConsumer):
                     {
                         "type": "game_infos",
                         "action": "updated",
-                        "game": self.games[f"{game_id}"]
+                        "game": self.games.get(f"{game_id}")
                     }
                 )
                 await asyncio.sleep(GameConfig.GAME_SPEED.value)
@@ -497,10 +497,14 @@ class GameConsumer(AsyncWebsocketConsumer):
                 self.room_group_name,
                 self.channel_name
             )
-            await self.update_user_status(self.games[f"{game_id}"]["player1"]["id"], "online")
-            await self.update_user_status(self.games[f"{game_id}"]["player2"]["id"], "online")
+            if self.games.get(f"{game_id}"):
+                await self.update_user_status(self.games[f"{game_id}"]["player1"]["id"], "online")
+                await self.update_user_status(self.games[f"{game_id}"]["player2"]["id"], "online")
             self.players.pop(f"{game['player1']['id']}")
             self.games.pop(f"{game_id}")
+            if self.tasks.get(f"{game_id}"):
+                self.tasks.get(f"{game_id}").cancel()
+                self.tasks.pop(f"{game_id}")
 
     def move_ball(self, game_id):
         self.games[f"{game_id}"]["ball"]["x"] += self.games[f"{game_id}"]["ball"]["dx"]
