@@ -61,7 +61,7 @@ SECRET_KEY = 'django-insecure-otc*6$yc^vbe&m1uzzt!0jt^l=4r4=q&3#voh5een44bu4v)u#
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ["127.0.0.1", "0.0.0.0", "localhost", "10.0.0.34", "10.0.0.3", "localhost", "0.0.0.0", f"{DOMAIN_NAME}"]
+ALLOWED_HOSTS = ["127.0.0.1", "0.0.0.0", "localhost", "10.0.0.34", "10.0.0.3", "localhost", "0.0.0.0", f"{DOMAIN_NAME}", "backend"]
 
 SESSION_SAVE_EVERY_REQUEST = True
 
