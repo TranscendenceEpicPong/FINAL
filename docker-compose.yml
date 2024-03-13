@@ -35,7 +35,7 @@ services:
       - frontend/.env
     ports:
       - 443:443
-      - 80:80
+    command: [nginx-debug, '-g', 'daemon off;']
     
 volumes:
   db-data:
