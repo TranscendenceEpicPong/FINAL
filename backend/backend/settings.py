@@ -16,8 +16,6 @@ import os
 
 from corsheaders.defaults import default_headers
 
-LOCAL_IP = "localhost"
-
 env = environ.Env(
     DB_NAME=(str, 'transcendence'),
     DB_USER=(str, 'postgres'),
@@ -25,7 +23,7 @@ env = environ.Env(
     DB_HOST=(str, '127.0.0.1'),
     DB_PORT=(str, '5432'),
     MYPY_DJANGO_CONFIG=(str, './mypy.ini'),
-    CORS_ALLOWED_ORIGINS=(list, ["http://localhost:8080", "http://localhost", "http://10.0.0.3:8080", "http://10.0.0.3:8000", "http://10.0.0.3:8080", "http://10.0.0.3:8000", f"http://{LOCAL_IP}:8080", f"http://{LOCAL_IP}:8000"]),
+    CORS_ALLOWED_ORIGINS=(list, ["http://localhost:8080", "http://localhost", "http://10.0.0.3:8080", "http://10.0.0.3:8000", "http://10.0.0.3:8080", "http://10.0.0.3:8000"]),
     JWT_SECRET=(str, 'SECRET'),
     PASSWORD_42AUTH=(str, ''),
     APP_NAME=(str, 'EpicPong'),
@@ -33,18 +31,22 @@ env = environ.Env(
     CLIENT_SECRET=(str, "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"),
     REDIRECT_URI=(str, "http://10.0.0.3:8080/auth/42-register"),
     AUTHORIZE_URL=(str, "https://api.intra.42.fr/oauth/authorize"),
-    TOKEN_URL=(str, "https://api.intra.42.fr/oauth/token")
+    TOKEN_URL=(str, "https://api.intra.42.fr/oauth/token"),
+    DOMAIN_NAME=(str, "ttt.42lausanne.ch")
 )
 
-CORS_ALLOWED_ORIGINS = env('CORS_ALLOWED_ORIGINS')
+DOMAIN_NAME = env("DOMAIN_NAME")
+
+CORS_ALLOWED_ORIGINS = [*env('CORS_ALLOWED_ORIGINS'), f"http://{DOMAIN_NAME}:8080", f"http://{DOMAIN_NAME}:8000", f"https://{DOMAIN_NAME}"]
 CORS_ALLOW_HEADERS = [*default_headers, 'X-CSRFToken']
 CORS_ALLOW_CREDENTIALS = True
 
 UNAUTHENTICATED_REQUESTS = ['/authentication/login', '/authentication/register', '/authentication/logout', '/server_info/', '/authentication/42-register/', '/authentication/login42']
 UNAUTHENTICATED_2FA_REQUESTS = ['/authentication/check-code','/authentication/logout']
 
-CSRF_TRUSTED_ORIGINS = ["http://localhost:8080", "http://localhost:8000", "http://10.0.0.3:8080", "http://10.0.0.3:8000", "http://10.0.0.3:8000", "http://10.0.0.3:8080", f"http://{LOCAL_IP}:8080", f"http://{LOCAL_IP}:8000"]
-CSRF_COOKIE_DOMAIN = f"{LOCAL_IP}"
+CSRF_TRUSTED_ORIGINS = ["http://localhost:8080", "http://localhost:8000", f"https://{DOMAIN_NAME}", f"http://{DOMAIN_NAME}:8080", f"http://{DOMAIN_NAME}:8000"]
+# CSRF_COOKIE_DOMAIN = f"{DOMAIN_NAME}"
+CSRF_COOKIE_DOMAIN = f"42lausanne.ch"
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -59,7 +61,7 @@ SECRET_KEY = 'django-insecure-otc*6$yc^vbe&m1uzzt!0jt^l=4r4=q&3#voh5een44bu4v)u#
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ["127.0.0.1", "0.0.0.0", "localhost", "10.0.0.34", "10.0.0.3", "localhost", "0.0.0.0", f"{LOCAL_IP}"]
+ALLOWED_HOSTS = ["127.0.0.1", "0.0.0.0", "localhost", "10.0.0.34", "10.0.0.3", "localhost", "0.0.0.0", f"{DOMAIN_NAME}"]
 
 SESSION_SAVE_EVERY_REQUEST = True
 
