@@ -32,7 +32,8 @@ env = environ.Env(
     REDIRECT_URI=(str, "http://10.0.0.3:8080/auth/42-register"),
     AUTHORIZE_URL=(str, "https://api.intra.42.fr/oauth/authorize"),
     TOKEN_URL=(str, "https://api.intra.42.fr/oauth/token"),
-    DOMAIN_NAME=(str, "ttt.42lausanne.ch")
+    DOMAIN_NAME=(str, "ttt.42lausanne.ch"),
+    SECRET_KEY=(str, 'django-insecure-otc*6$yc^vbe&m1uzzt!0jt^l=4r4=q&3#voh5een44bu4v)u#')
 )
 
 DOMAIN_NAME = env("DOMAIN_NAME")
@@ -45,8 +46,8 @@ UNAUTHENTICATED_REQUESTS = ['/authentication/login', '/authentication/register',
 UNAUTHENTICATED_2FA_REQUESTS = ['/authentication/check-code','/authentication/logout']
 
 CSRF_TRUSTED_ORIGINS = ["http://localhost:8080", "http://localhost:8000", f"https://{DOMAIN_NAME}", f"http://{DOMAIN_NAME}:8080", f"http://{DOMAIN_NAME}:8000"]
-# CSRF_COOKIE_DOMAIN = f"{DOMAIN_NAME}"
-CSRF_COOKIE_DOMAIN = f"42lausanne.ch"
+CSRF_COOKIE_DOMAIN = f"{DOMAIN_NAME}"
+# CSRF_COOKIE_DOMAIN = f"42lausanne.ch"
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -56,12 +57,12 @@ environ.Env.read_env(os.path.join(BASE_DIR, '.env'))
 # See https://docs.djangoproject.com/en/4.2/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-otc*6$yc^vbe&m1uzzt!0jt^l=4r4=q&3#voh5een44bu4v)u#'
+SECRET_KEY = env('SECRET_KEY')
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ["127.0.0.1", "0.0.0.0", "localhost", "10.0.0.34", "10.0.0.3", "localhost", "0.0.0.0", f"{DOMAIN_NAME}", "backend"]
+ALLOWED_HOSTS = ["127.0.0.1", "0.0.0.0", "localhost", f"{DOMAIN_NAME}", "backend"]
 
 SESSION_SAVE_EVERY_REQUEST = True
 
