@@ -79,7 +79,7 @@ export default (props) => {
 										match.player2.alias :
 										match.player1.alias}
 								</p>
-								<button class="btn btn-info btn-sm btn-start-tournament-game" data-username="${match.player1.username === current_user ? match.player2.alias :
+								<button class="btn btn-info btn-sm btn-start-tournament-game" data-username="${match.player1.username === current_user ? match.player2.username :
 										match.player1.username}">
 									Join Game
 								</button>
