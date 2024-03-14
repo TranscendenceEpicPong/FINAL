@@ -69,7 +69,7 @@ class TournamentViewSet(viewsets.ModelViewSet):
             return Response(status=status.HTTP_400_BAD_REQUEST,
                             data={'error': "You are not participatong to this tournament!"})
 
-        if (tournament.participants.filter(alias=data['alias']).count() > 0)
+        if (tournament.participants.filter(alias=data['alias']).count() > 0):
             return Response(status=status.HTTP_400_BAD_REQUEST,
                             data={'error': "Alias '{}' is already taken for this tournament.".format(data['alias'])})
 
