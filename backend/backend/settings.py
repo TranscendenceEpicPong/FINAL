@@ -17,18 +17,18 @@ import os
 from corsheaders.defaults import default_headers
 
 env = environ.Env(
-    DB_NAME=(str, 'transcendence'),
-    DB_USER=(str, 'postgres'),
-    DB_PASS=(str, 'password'),
-    DB_HOST=(str, '127.0.0.1'),
-    DB_PORT=(str, '5432'),
+    TRANS_DB_NAME=(str, 'transcendence'),
+    TRANS_DB_USER=(str, 'postgres'),
+    TRANS_DB_PASS=(str, 'password'),
+    TRANS_DB_HOST=(str, '127.0.0.1'),
+    TRANS_DB_PORT=(str, '5432'),
     MYPY_DJANGO_CONFIG=(str, './mypy.ini'),
     CORS_ALLOWED_ORIGINS=(list, ["http://localhost:8080", "http://localhost"]),
     JWT_SECRET=(str, 'SECRET'),
     PASSWORD_42AUTH=(str, ''),
     APP_NAME=(str, 'EpicPong'),
-    CLIENT_ID=(str, "u-s4t2ud-7059e1e90cb7aec3191717d4260819c886899256f2c3267e7b742b0b65471ae6"),
-    CLIENT_SECRET=(str, "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"),
+    CLIENT_ID=(str, "NO CLIENT ID"),
+    CLIENT_SECRET=(str, "NO CLIENT SECRET"),
     REDIRECT_URI=(str, "http://10.0.0.3:8080/auth/42-register"),
     AUTHORIZE_URL=(str, "https://api.intra.42.fr/oauth/authorize"),
     TOKEN_URL=(str, "https://api.intra.42.fr/oauth/token"),
@@ -135,11 +135,11 @@ CHANNEL_LAYERS = {
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql_psycopg2',
-        'NAME': env('DB_NAME'),
-        'USER': env('DB_USER'),
-        'PASSWORD': env('DB_PASS'),
-        'HOST': env('DB_HOST'),
-        'PORT': env('DB_PORT'),
+        'NAME': env('TRANS_DB_NAME'),
+        'USER': env('TRANS_DB_USER'),
+        'PASSWORD': env('TRANS_DB_PASS'),
+        'HOST': env('TRANS_DB_HOST'),
+        'PORT': env('TRANS_DB_PORT'),
     }
 }
 
