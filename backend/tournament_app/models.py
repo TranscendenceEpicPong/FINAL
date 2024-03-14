@@ -136,21 +136,21 @@ class Tournament(models.Model):
             )]
             self.participants.filter(user__in=losers).update(is_active=False)
 
-    # def notify(self, match):
-    #     async_to_sync(get_channel_layer().group_send)(
-    #         f"core-{match.player1.id}",
-    #         {
-    #             'type': 'alert',
-    #             'content': f"Tournois: {match.tournament.name}. Un nouveau match est disponible contre {match.player2.alias}",
-    #         }
-    #     )
-    #     async_to_sync(get_channel_layer().group_send)(
-    #         f"core-{match.player2.id}",
-    #         {
-    #             'type': 'alert',
-    #             'content': f"Tournois: {match.tournament.name}. Un nouveau match est disponible contre {match.player1.alias}",
-    #         }
-    #     )
+    def notify(self, match):
+        async_to_sync(get_channel_layer().group_send)(
+            f"core-{match.player1.id}",
+            {
+                'type': 'send_alert',
+                'content': f"Tournois: {match.tournament.name}. Un nouveau match est disponible contre {match.player2.alias}",
+            }
+        )
+        async_to_sync(get_channel_layer().group_send)(
+            f"core-{match.player2.id}",
+            {
+                'type': 'send_alert',
+                'content': f"Tournois: {match.tournament.name}. Un nouveau match est disponible contre {match.player1.alias}",
+            }
+        )
 
     def organize_next_matches(self):
         from game.models import Game as Match
@@ -169,7 +169,7 @@ class Tournament(models.Model):
                 player2=pair[1].user,
                 phase=self.phase,
             )
-            # self.notify(match)
+            self.notify(match)
 
     def organize_pool_matches(self):
         from game.models import Game as Match
