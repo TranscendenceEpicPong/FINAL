@@ -66,13 +66,18 @@ class TournamentViewSet(viewsets.ModelViewSet):
             return Response(status=status.HTTP_400_BAD_REQUEST,
                             data={'error': "You can't register more than once!"})
         except RegistrationTournament.DoesNotExist:
-            serializer = ParticipantSerializer(data=data)
-            if serializer.is_valid():
-                serializer.save()
-                return Response(status=status.HTTP_202_ACCEPTED)
-            else:
-                return Response(status=status.HTTP_400_BAD_REQUEST,
-                                data={'error': serializer.errors})
-        else:
+            return Response(status=status.HTTP_400_BAD_REQUEST,
+                            data={'error': "You are not participatong to this tournament!"})
+
+        if (tournament.participants.filter(alias=data['alias']).count() > 0)
             return Response(status=status.HTTP_400_BAD_REQUEST,
                             data={'error': "Alias '{}' is already taken for this tournament.".format(data['alias'])})
+
+        serializer = ParticipantSerializer(data=data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(status=status.HTTP_202_ACCEPTED)
+        else:
+            return Response(status=status.HTTP_400_BAD_REQUEST,
+                            data={'error': serializer.errors})
+            
