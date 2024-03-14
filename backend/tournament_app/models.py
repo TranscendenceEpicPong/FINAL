@@ -140,14 +140,14 @@ class Tournament(models.Model):
         async_to_sync(get_channel_layer().group_send)(
             f"core-{match.player1.id}",
             {
-                'type': 'alert',
+                'type': 'send_alert',
                 'content': f"Tournois: {match.tournament.name}. Un nouveau match est disponible contre {match.player2.alias}",
             }
         )
         async_to_sync(get_channel_layer().group_send)(
             f"core-{match.player2.id}",
             {
-                'type': 'alert',
+                'type': 'send_alert',
                 'content': f"Tournois: {match.tournament.name}. Un nouveau match est disponible contre {match.player1.alias}",
             }
         )

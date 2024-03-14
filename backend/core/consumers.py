@@ -61,6 +61,9 @@ class CoreConsumer(AsyncWebsocketConsumer):
     async def update_status(self, event):
         await self.send(text_data=json.dumps(event))
 
+    async def send_alert(self, event):
+        await self.send(text_data=json.dumps(event))
+
     async def get_user(self, userId):
         user = await sync_to_async(EpicPongUser.objects.filter)(id=userId)
         if await sync_to_async(user.count)() == 0:
