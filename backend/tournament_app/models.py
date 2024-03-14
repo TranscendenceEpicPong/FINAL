@@ -3,9 +3,9 @@ from django.db import models
 import random
 from itertools import zip_longest
 import logging  # error
-
+from channels.layers import get_channel_layer
 from django.db.models import QuerySet
-
+from asgiref.sync import sync_to_async, async_to_sync
 from game.status import Status
 
 MIN_PARTICIPANTS = 3
@@ -135,6 +135,22 @@ class Tournament(models.Model):
                 phase=prev_phase
             )]
             self.participants.filter(user__in=losers).update(is_active=False)
+
+    def notify(self, match):
+        async_to_sync(get_channel_layer().group_send)(
+            f"core-{match.player1.id}",
+            {
+                'type': 'alert',
+                'content': f"Tournois: {match.tournament.name}. Un nouveau match est disponible contre {match.player2.alias}",
+            }
+        )
+        async_to_sync(get_channel_layer().group_send)(
+            f"core-{match.player2.id}",
+            {
+                'type': 'alert',
+                'content': f"Tournois: {match.tournament.name}. Un nouveau match est disponible contre {match.player1.alias}",
+            }
+        )
 
     def organize_next_matches(self):
         from game.models import Game as Match
