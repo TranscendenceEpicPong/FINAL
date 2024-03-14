@@ -399,9 +399,6 @@ class GameConsumer(AsyncWebsocketConsumer):
             await self.update_user_status(user.id, "online")
 
         game = await sync_to_async(Game.objects.filter)(Q(player1=user) | Q(player2=user), status=Status.STARTED.value)
-        if await sync_to_async(game.count)() == 0:
-            return
-
         game = await sync_to_async(game.first)()
         if game is None:
             return
