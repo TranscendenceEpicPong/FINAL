@@ -402,7 +402,7 @@ class GameConsumer(AsyncWebsocketConsumer):
         if not close_code:
             await self.update_user_status(user.id, "online")
 
-        game = await sync_to_async(Game.objects.filter)(Q(player1=user) | Q(player2=user), status=Status.STARTED.value)
+        game = await sync_to_async(Game.objects.filter)(Q(player1=user) | Q(player2=user), Q(status=Status.STARTED.value) | Q(status=Status.RESERVED.value))
         game = await sync_to_async(game.first)()
         if game is None:
             return
