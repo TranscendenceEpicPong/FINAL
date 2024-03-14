@@ -114,12 +114,12 @@ export default (props) => {
 									<tr><td>${phase}</td></tr>
 									${matchesByPhase[phase].map((match) => html`
 										<tr>
-											<td>${match.player1.username}</td>
+											<td>${match.player1.alias}</td>
 											<td>${match.state !== States.FINISHED ?
 												getStateTitle(match.state) :
 												`${match.score_player1} - ${match.score_player2}`}
 											</td>
-											<td>${match.player2.username}</td>
+											<td>${match.player2.alias}</td>
 											<td>${match.winner ?? ' - '}</td>
 										</tr>
 									`)}
