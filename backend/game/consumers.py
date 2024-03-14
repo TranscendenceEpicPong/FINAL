@@ -395,7 +395,8 @@ class GameConsumer(AsyncWebsocketConsumer):
             return
 
         await sync_to_async(self.delete_not_started_games)(user)
-        await self.update_user_status(user.id, "online")
+        if not close_code:
+            await self.update_user_status(user.id, "online")
 
         game = await sync_to_async(Game.objects.filter)(Q(player1=user) | Q(player2=user), status=Status.STARTED.value)
         if await sync_to_async(game.count)() == 0:
@@ -427,7 +428,7 @@ class GameConsumer(AsyncWebsocketConsumer):
         player = ids.get('player1')
         if ids.get('player1') == user:
             player = ids.get('player2')
-        if player:
+        if player and player.status == "in_game":
             await self.update_user_status(player.id, "online")
 
         game_id = self.players.get(f"{user.id}")
