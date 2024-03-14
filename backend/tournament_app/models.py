@@ -136,21 +136,21 @@ class Tournament(models.Model):
             )]
             self.participants.filter(user__in=losers).update(is_active=False)
 
-    def notify(self, match):
-        async_to_sync(get_channel_layer().group_send)(
-            f"core-{match.player1.id}",
-            {
-                'type': 'alert',
-                'content': f"Tournois: {match.tournament.name}. Un nouveau match est disponible contre {match.player2.alias}",
-            }
-        )
-        async_to_sync(get_channel_layer().group_send)(
-            f"core-{match.player2.id}",
-            {
-                'type': 'alert',
-                'content': f"Tournois: {match.tournament.name}. Un nouveau match est disponible contre {match.player1.alias}",
-            }
-        )
+    # def notify(self, match):
+    #     async_to_sync(get_channel_layer().group_send)(
+    #         f"core-{match.player1.id}",
+    #         {
+    #             'type': 'alert',
+    #             'content': f"Tournois: {match.tournament.name}. Un nouveau match est disponible contre {match.player2.alias}",
+    #         }
+    #     )
+    #     async_to_sync(get_channel_layer().group_send)(
+    #         f"core-{match.player2.id}",
+    #         {
+    #             'type': 'alert',
+    #             'content': f"Tournois: {match.tournament.name}. Un nouveau match est disponible contre {match.player1.alias}",
+    #         }
+    #     )
 
     def organize_next_matches(self):
         from game.models import Game as Match
@@ -169,7 +169,7 @@ class Tournament(models.Model):
                 player2=pair[1].user,
                 phase=self.phase,
             )
-            self.notify(match)
+            # self.notify(match)
 
     def organize_pool_matches(self):
         from game.models import Game as Match
@@ -228,13 +228,14 @@ class Tournament(models.Model):
         return self.participants.get(user=user)
 
     def update_tournament_results(self):
+        # print(list(self.current_matches))
         for match in self.current_matches:
             winner_user = match.get_winner()
             loser_user = match.get_loser()
 
-            print(list(self.participants.all()))
-            print("Winner:", winner_user)
-            print("Loser:", loser_user)
+            # print(list(self.participants.all()))
+            # print("Winner:", winner_user)
+            # print("Loser:", loser_user)
 
             winner = self.participants.get(user=winner_user)
             winner.points += 3
@@ -265,68 +266,6 @@ class Tournament(models.Model):
                 return False
 
         self.start_next_phase()
-
-
-# class Match(models.Model):
-#     tournament = models.ForeignKey(Tournament, on_delete=models.CASCADE, related_name='matches')
-#     player1 = models.ForeignKey(get_user_model(), on_delete=models.CASCADE, related_name='player1_matches')
-#     player2 = models.ForeignKey(get_user_model(), on_delete=models.CASCADE, related_name='player2_matches')
-#     phase = models.CharField(choices=Tournament.Phases)
-#     score_player1 = models.PositiveIntegerField(default=0)
-#     score_player2 = models.PositiveIntegerField(default=0)
-
-#     MATCH_STATE_CHOICES = [
-#         ('not_started', 'Not Started'),
-#         ('in_progress', 'In Progress'),
-#         ('finished', 'Finished'),
-#     ]
-
-#     state = models.CharField(max_length=20, choices=MATCH_STATE_CHOICES, default='not_started')
-#     ready_player1 = models.BooleanField(default=False)
-#     ready_player2 = models.BooleanField(default=False)
-
-    # def get_winner(self):
-    #     if self.state != self.MATCH_STATE_CHOICES[-1][0]:
-    #         return None
-    #     return self.player1 \
-    #         if self.score_player2 < self.score_player1 \
-    #         else self.player2
-
-    # def get_winner_score(self):
-    #     return max([self.score_player1, self.score_player2])
-
-    # def get_loser(self):
-    #     if self.state != self.MATCH_STATE_CHOICES[-1][0]:
-    #         return None
-    #     return self.player1 \
-    #         if self.score_player2 > self.score_player1 \
-    #         else self.player2
-
-    # def get_loser_score(self):
-    #     return min([self.score_player1, self.score_player2])
-
-    # def get_as_dict(self):
-    #     return {
-    #         'player1': {
-    #             'id': self.player1.id,
-    #             'username': self.player1.username,
-    #             'alias': self.player1.registrationtournament_set.get(
-    #                 tournament=self.tournament
-    #             ).alias,
-    #         },
-    #         'player2': {
-    #             'id': self.player2.id,
-    #             'username': self.player2.username,
-    #             'alias': self.player2.registrationtournament_set.get(
-    #                 tournament=self.tournament
-    #             ).alias,
-    #         },
-    #         'winner': getattr(self.get_winner(), 'username', None),
-    #         'phase': self.phase,
-    #         'state': self.state,
-    #         'score_player1': self.score_player1,
-    #         'score_player2': self.score_player2,
-    #     }
 
 
 class RegistrationTournament(models.Model):

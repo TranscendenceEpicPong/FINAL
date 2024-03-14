@@ -4,6 +4,9 @@ import random
 from django.contrib.auth import get_user_model
 from django.test import TestCase
 from rest_framework.test import APITestCase
+
+from game.models import Game
+from game.status import Status
 from tournament_app.models import Tournament, RegistrationTournament
 
 
@@ -18,7 +21,9 @@ def create_tournament(number_participants: int, tournament_name: str = "Tourname
         tournament.participants.create(
             user=get_user_model().objects.create_user(
                 username=f'user{i}'
-            )
+            ),
+            alias=f'user{i}',
+            is_active=True,
         )
 
     return tournament
@@ -116,6 +121,13 @@ class TournamentApiTestCase(APITestCase):
 
 class PhasesTestCase(TestCase):
     def start_next_phase(self, tournament: Tournament):
+        for match in tournament.current_matches:
+            winner = random.choice([match.player1, match.player2])
+            match.score_player1 = 3 if winner == match.player1 else random.randint(0, 2)
+            match.score_player2 = 3 if winner == match.player2 else random.randint(0, 2)
+            match.status = Status.FINISHED.value
+            match.save()
+
         tournament.update_tournament_results()
         tournament.start_next_phase()
 
@@ -181,6 +193,8 @@ class ScoreTest(TestCase):
             match.score_player2 = 0 \
                 if match.player2 == base_first.user \
                 else random.randint(0, 5)
+
+            match.status = Status.FINISHED.value
 
             match.save()
 

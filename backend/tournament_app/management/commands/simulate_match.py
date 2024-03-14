@@ -9,9 +9,11 @@
 #########################################################################################
 
 from django.core.management.base import BaseCommand
+
+from game.status import Status
 from tournament_app.models import Tournament
 import random
-from game.models import Game as Match
+from game.models import Game as Match, Game
 
 
 class Command(BaseCommand):
@@ -37,7 +39,7 @@ class Command(BaseCommand):
             match.score_player1 = 3 if winner == match.player1 else random.randint(0, 2)
             match.score_player2 = 3 if winner == match.player2 else random.randint(0, 2)
 
-            match.state = Match.MATCH_STATE_CHOICES[-1][0]
+            match.status = match.status = Status.FINISHED.value
 
             match.save()
 

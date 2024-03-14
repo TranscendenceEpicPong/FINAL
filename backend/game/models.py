@@ -1,4 +1,6 @@
 from django.db import models
+from django.utils.timezone import now
+
 from core.models import EpicPongUser as User
 from .status import Status
 from django.db.models import Q
@@ -19,7 +21,7 @@ class Game(models.Model):
     score_player2 = models.IntegerField(default=0)
     winner = models.ForeignKey(User, on_delete=models.CASCADE, related_name='winner_user', null=True)
     status = models.IntegerField(default=Status.WAITING.value)
-    created_at = models.DateTimeField(default=current_time)
+    created_at = models.DateTimeField(default=now)
 
     def __str__(self):
         return f"{self.player1} vs {self.player2} - {self.status}"
