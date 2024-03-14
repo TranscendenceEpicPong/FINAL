@@ -140,7 +140,7 @@ class GameConsumer(AsyncWebsocketConsumer):
         if game.status == Status.WAITING.value:
             game.status = Status.RESERVED.value
             if await sync_to_async(game.get_player)(2) == user:
-                tmp_player = game.player1
+                tmp_player = game.get_player(1)
                 game.player1 = user
                 game.player2 = tmp_player
         elif await sync_to_async(game.get_player)(2) == user:
