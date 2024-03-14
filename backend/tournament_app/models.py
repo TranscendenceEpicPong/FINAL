@@ -136,6 +136,9 @@ class Tournament(models.Model):
             )]
             self.participants.filter(user__in=losers).update(is_active=False)
 
+    def notify(self, match):
+        pass
+
     def organize_next_matches(self):
         from game.models import Game as Match
         if self.phase == self.Phases.POOL_PHASE:
@@ -153,6 +156,7 @@ class Tournament(models.Model):
                 player2=pair[1].user,
                 phase=self.phase,
             )
+            self.notify(match)
 
     def organize_pool_matches(self):
         from game.models import Game as Match
