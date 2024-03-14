@@ -411,7 +411,7 @@ class GameConsumer(AsyncWebsocketConsumer):
         if game.status == Status.STARTED.value:
             await sync_to_async(game.leave_game)(user, tournament is None)
             if self.games.get(f"{game.id}"):
-                self.games[f"{game.id}"]['status'] = game.status
+                self.games[f"{game.id}"]['status'] = Status.FINISHED.value
                 self.games[f"{game.id}"]['winner'] = game.winner.id
                 await self.channel_layer.group_send(
                     f"{prefix}-{game.id}",
