@@ -39,10 +39,10 @@ export default (props) => {
 					</h6>
 					${(getData("friends.active") || []).map((friend) => {
 						return html`<pm-item
-							href="${isCurrentUser(friend.sender.username) ? friend.receiver.avatar: friend.sender.avatar}"
-							name="${isCurrentUser(friend.sender.username) ? friend.receiver.username: friend.sender.username}"
-							link="/chats/${isCurrentUser(friend.sender.username) ? friend.receiver.username: friend.sender.username}"
-							status="${isCurrentUser(friend.sender.username) ? friend.receiver.status: friend.sender.status}"></pm-item>`
+							href="${friend.sender.id == getData('auth.user.id') ? friend.receiver.avatar: friend.sender.avatar}"
+							name="${friend.sender.id == getData('auth.user.id') ? friend.receiver.username: friend.sender.username}"
+							link="/chats/${friend.sender.id == getData('auth.user.id') ? friend.receiver.username: friend.sender.username}"
+							status="${friend.sender.id == getData('auth.user.id') ? friend.receiver.status: friend.sender.status}"></pm-item>`
 					})}
 				</div>
 				<short-profile-menu></short-profile-menu>

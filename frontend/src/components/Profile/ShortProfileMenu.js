@@ -37,7 +37,7 @@ export default (props) => {
 									width: 20px;
 									height: 20px;
 								"
-								class="status-pill status-${getData('auth.user.status')}"
+								class="status-pill status-online"
 								title="${getData('auth.user.status').charAt(0).toUpperCase() + getData('auth.user.status').slice(1)}"></div>
 						</div>
 					</div>
@@ -63,7 +63,7 @@ export default (props) => {
 							style="font-size: 12px">
 							Current status
 						</h6>
-						<h6 style="font-size: 13px">${getData('auth.user.status')}</h6>
+						<h6 style="font-size: 13px">Online</h6>
 						<div
 							class="mt-3 mb-3"
 							style="background: rgba(255, 255, 255, 0.27); height: 1px"></div>
@@ -97,7 +97,7 @@ export default (props) => {
 								style="width: 30px; height: 30px"
 								src="${getData('auth.user.avatar')}" />&nbsp;${getData('auth.user.username').charAt(0).toUpperCase() + getData('auth.user.username').slice(1)}
 						</h6>
-						<div class="status-pill status-${getData('auth.user.status')}"></div>
+						<div class="status-pill status-online"></div>
 					</div>
 					<i
 						id="open-settings"

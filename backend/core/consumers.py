@@ -34,6 +34,31 @@ def send_to_friend(user):
             }
         )
 
+def update_username_for_friends(user, username):
+    friends = Friends.objects.filter(Q(user=user) | Q(friend=user))
+    channel_layer = get_channel_layer()
+    for friend in friends:
+        async_to_sync(channel_layer.group_send)(
+            f"core-{friend.friend.id}",
+            {
+                'type': 'update_username',
+                "user": {
+                    "id": user.id,
+                    'username': username,
+                }
+            }
+        )
+    async_to_sync(channel_layer.group_send)(
+        f"core-{user.id}",
+        {
+            'type': 'update_username',
+            "user": {
+                "id": user.id,
+                'username': username,
+            }
+        }
+    )
+
 class CoreConsumer(AsyncWebsocketConsumer):
     async def connect(self):
         if self.scope['user'] == AnonymousUser():
@@ -59,6 +84,9 @@ class CoreConsumer(AsyncWebsocketConsumer):
         await self.accept()
 
     async def update_status(self, event):
+        await self.send(text_data=json.dumps(event))
+
+    async def update_username(self, event):
         await self.send(text_data=json.dumps(event))
 
     async def send_alert(self, event):

@@ -22,10 +22,12 @@ def index(request):
         blocks.append({
             'id': user.id,
             'sender': {
+                "id": owner.id,
                 "username": owner.username,
                 "avatar": owner.avatar,
             },
             'receiver': {
+                "id": user.id,
                 "username": user.username,
                 "avatar": user.avatar,
             },

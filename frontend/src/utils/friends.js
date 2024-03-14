@@ -33,7 +33,7 @@ export function updateFriendStatus(username, status)
 {
 	const friends = getData('friends.active');
 	const updated_friends = friends.map(f => {
-		if (isCurrentUser(f.sender.username))
+		if (getData("auth.user.id") == f.sender.id)
 		{
 			if (f.receiver.username === username)
 				f.receiver.status = status;
@@ -85,7 +85,6 @@ function isInWaitingList(sender, receiver)
 export function makeRequestFriend(username, action)
 {
 	sendToSocket({action, username}, 'friends');
-
 }
 
 export function addFriendWaitingItem(friend)

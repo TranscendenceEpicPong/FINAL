@@ -1,4 +1,5 @@
 import {html} from "../../html.js";
+import { getData } from "../../store.js";
 import { isCurrentUser } from "../../utils/profile.js";
 
 export default (props) => {

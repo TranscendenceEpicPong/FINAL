@@ -4,8 +4,8 @@ import random
 from itertools import zip_longest
 import logging  # error
 from channels.layers import get_channel_layer
-from django.db.models import QuerySet
 from asgiref.sync import sync_to_async, async_to_sync
+from django.db.models import QuerySet
 from game.status import Status
 
 MIN_PARTICIPANTS = 3

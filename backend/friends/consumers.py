@@ -86,12 +86,14 @@ class FriendConsumer(WebsocketConsumer):
             return
 
         sender = {
+            "id": owner.id,
             "username": owner.username,
             "avatar": owner.avatar,
             "status": owner.status,
         }
 
         receiver = {
+            "id": user.id,
             "username": user.username,
             "avatar": user.avatar,
             "status": user.status,

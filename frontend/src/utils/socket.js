@@ -53,6 +53,7 @@ const chatsSockets = {};
 
 function getSocketURL(name)
 {
+    console.log(prefix)
 	return `${prefix}/${name}/?${getCookie('authorization')}`
 }
 

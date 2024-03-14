@@ -19,7 +19,7 @@ export async function analyzeChatRequest(event)
  */
 export function makeRequestChat(username, action)
 {
-	sendToSocket({action, username}, 'chats');
+	sendToSocket({action, ...username}, 'chats');
 
 }
 

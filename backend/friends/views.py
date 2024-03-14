@@ -26,11 +26,13 @@ def index(request):
         friends.append({
             'id': user.id,
             "sender": {
+                "id": owner.id,
                 "username": owner.username,
                 "avatar": owner.avatar,
                 "status": owner.status,
             },
             "receiver": {
+                "id": user.id,
                 "username": user.username,
                 "avatar": user.avatar,
                 "status": user.status,
@@ -54,10 +56,12 @@ def waiting(request):
         friends.append({
             'id': user.id,
             "sender": {
+                "id": user.id,
                 "username": user.username,
                 "avatar": user.avatar,
             },
             "receiver": {
+                "id": owner.id,
                 "username": owner.username,
                 "avatar": owner.avatar,
             },
@@ -79,10 +83,12 @@ def pending(request):
         friends.append({
             'id': user.id,
             "sender": {
+                "id": owner.id,
                 "username": owner.username,
                 "avatar": owner.avatar,
             },
             "receiver": {
+                "id": user.id,
                 "username": user.username,
                 "avatar": user.avatar,
             },

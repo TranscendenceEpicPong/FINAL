@@ -78,10 +78,12 @@ class BlockConsumer(WebsocketConsumer):
             'message': status['message'],
             "status": status['status'],
             "sender": {
+                "id": owner.id,
                 "username": owner.username,
                 "avatar": owner.avatar,
             },
             "receiver": {
+                "id": user.id,
                 "username": user.username,
                 "avatar": user.avatar,
             },

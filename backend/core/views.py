@@ -19,7 +19,9 @@ from .forms import UserUpdateForm
 from game.models import Game
 from django.db.models import Q
 from game.status import Status
-
+from channels.layers import get_channel_layer
+from asgiref.sync import sync_to_async, async_to_sync
+from core.consumers import update_username_for_friends
 
 @require_GET
 def server_info(request):
@@ -98,6 +100,9 @@ def update(request):
 
     if password and confirm_password and len(password) > 0 and password == confirm_password:
         update_session_auth_hash(request, request.user)
+
+    if username:
+        update_username_for_friends(current_user, username)
 
     response = JsonResponse({
         "id": request.user.id,

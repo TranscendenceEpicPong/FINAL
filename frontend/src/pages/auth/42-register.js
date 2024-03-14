@@ -13,9 +13,12 @@ export default async () => {
             return setTimeout(async () => await initAccess('/'), 1000);
     });
     return html`
-		<div style="background: #252a2f; color: #aaaaaa; position: absolute; top: 0; bottom: 0; left: 0; right: 0; height: 100%; width: 100%;" id="mainContainer">
-            <div class="container pt-4">
-                <h1>Connexion en cours</h1>
+		<div style="background: #252a2f; color: #ffffff; display: flex; justify-content: center; align-items: center;height:100svh;">
+            <div class="text-center">
+                <div class="spinner-grow bg-white mb-3" style="width: 3rem; height: 3rem;" role="status">
+                    <span class="sr-only">Loading...</span>
+                </div>
+                <h5>Connexion en cours...</h5>
             </div>
         </div>
     `
