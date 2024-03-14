@@ -1,0 +1,16 @@
+@keyframes border-rainbow {
+  0% {
+    background-position: 0% 50%;
+  }
+  100% {
+    background-position: 100% 50%;
+  }
+}
+
+.border-rainbow {
+  border-color: transparent !important;
+  background: linear-gradient(90deg, #ff0000, #ff9900, #ffff00, #33cc33, #3399ff, #9900cc, #ff3399);
+  background-size: 1400% 100%;
+  animation: border-rainbow 5s linear infinite;
+}
+

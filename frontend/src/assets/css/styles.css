@@ -1,0 +1,408 @@
+body{
+	background:#252a2f;
+}
+
+.menu-item {
+	outline: none;
+	border: none;
+	border-radius: 5px;
+	height: 45px;
+	margin: 0px 10px;
+	cursor: pointer;
+	color: #aaaaaa;
+	display: flex;
+	align-items: center;
+	user-select: none;
+}
+
+.menu-item:hover {
+	background-color: #252a2f;
+}
+
+.menu-item.active {
+	background-color: #252a2f;
+}
+
+#bottom-nav {
+	color: #aaaaaa;
+	display: flex;
+	align-items: center;
+	user-select: none;
+	height: 50px;
+	background: rgb(19, 19, 22);
+}
+
+.pointer {
+	cursor: pointer;
+}
+
+#profile-menu {
+	margin-left: 10px;
+	height: 35px;
+	width: 135.2679px;
+	display: flex;
+	align-items: center;
+	cursor: pointer;
+	border-radius: 5px;
+}
+
+#profile-menu:hover {
+	background-color: #2f3037;
+}
+
+#short-profile-menu {
+	position: fixed;
+	bottom: 60px;
+	left: 15px;
+	width: 280px;
+	height: 480èx;
+	z-index: 90;
+	border-radius: 5px;
+	border: 2px solid #828282;
+	/*background: linear-gradient(#040222 21%, #131316);*/
+	background-color: #131316;
+}
+
+.badge-container {
+	width: fit-content;
+	max-width: 100%;
+	color: white;
+	/*display: flex;*/
+	/*align-items: center;*/
+	/*justify-content: center;*/
+	margin-left: auto;
+	background-color: #2d2e36;
+	padding: 5px;
+	border-radius: 5px;
+}
+
+.badge-container * {
+	cursor: pointer;
+}
+
+.badge-container *:not(:last-child) {
+	margin-right: 8px;
+}
+
+.status-pill {
+  position: absolute;
+  margin-left: 29px;
+  margin-top: 20px;
+  border-radius: 50%;
+  width: 17px;
+  height: 17px;
+}
+
+.status-online {
+  background: #28a745;
+}
+
+.status-offline {
+  background: #878484;
+}
+
+.status-in_game {
+  background: #c300ff;
+}
+
+.menu-item .status-pill {
+	border: 3px solid #1c2931;
+}
+
+.menu-item:hover .status-pill {
+	border-color: #131316;
+}
+
+#profile-menu .status-pill {
+	border: 3px solid #131316;
+}
+
+#profile-menu:hover .status-pill {
+	border-color: #2f3037;
+}
+
+#type-bar {
+	background-color: #131316;
+	height: 50px;
+	width: calc(100% - 50px);
+	margin: auto;
+	border-radius: 5px;
+	display: flex;
+	align-items: center;
+}
+
+#type-bar input {
+	width: 100%;
+	background-color: transparent;
+	outline: none;
+	border: none;
+	color: white;
+}
+
+#type-bar input::placeholder {
+	color: #757575;
+}
+
+#type-bar i {
+	font-size: 21px;
+	color: #aaaaaa;
+}
+
+#type-bar i:hover {
+	color: white;
+}
+
+.emoji-icon-bar {
+	margin-bottom: 0px;
+	font-size: 21px;
+	user-select: none;
+	transition: 0.1s;
+	position: absolute;
+	cursor: pointer;
+}
+
+.emoji-icon-bar:hover {
+	font-size: 24px;
+	margin-right: -2px;
+}
+
+#transition_div {
+	position: fixed;
+	top: 50%;
+	left: 50%;
+	background: #131316;
+	transform: translate(-50%, -50%) scale(0);
+	transition-delay: 5s;
+	display: none;
+	z-index: 100 !important;
+	border-radius: 20px;
+}
+
+@keyframes openAnimation {
+	from {
+		transform: translate(-50%, -50%) scale(0);
+	}
+	to {
+		transform: translate(-50%, -50%) scale(1);
+		width: 100%;
+		height: 100svh;
+		border-radius: 0px;
+	}
+}
+
+#transition_div.show {
+	display: block;
+	animation: openAnimation 0.2s forwards;
+}
+
+#nav_main {
+	width: 250px;
+	height: 100svh;
+	background: rgba(0, 0, 0, 0.39);
+	display: flex;
+	flex-direction: column;
+	z-index: 80;
+}
+
+@keyframes NavAnimation {
+	from {
+		transform: translate(-100%, 0);
+	}
+	to {
+		transform: translate(0%, 0%);
+	}
+}
+
+@media (max-width: 767px) {
+	#nav_main {
+		position: fixed;
+		width: 100%;
+		background: #000000;
+		animation: NavAnimation 0.2s forwards;
+	}
+}
+
+@keyframes NavCloseAnimation {
+	from {
+		transform: translate(0%, 0);
+	}
+	to {
+		transform: translate(-100%, 0);
+	}
+}
+
+@media (max-width: 767px) {
+	#nav_main.closed {
+		animation: NavCloseAnimation 0.2s forwards !important;
+	}
+}
+
+.list-group-item {
+	background-color: #171a1d;
+	color: white;
+	border: none;
+}
+
+#main_container {
+	height: calc(100% - 80px);
+	max-height: calc(100% - 80px);
+	overflow-y: auto;
+}
+
+.cord-container {
+	height: 100svh;
+}
+
+@media (max-width: 768px) {
+	.cord-container {
+		height: calc(100svh - 64px);
+	}
+}
+
+#custom-input {
+	background-color: #131316;
+	height: 50px;
+	border-radius: 5px;
+	display: flex;
+	align-items: center;
+}
+
+#custom-input input {
+	width: 100%;
+	background-color: transparent;
+	outline: none;
+	border: none;
+	color: white;
+}
+
+#custom-input input::placeholder {
+	color: #757575;
+}
+
+#custom-input i {
+	font-size: 21px;
+	color: #aaaaaa;
+}
+
+#gamewindow {
+	height: 100svh;
+	margin: 0;
+	display: flex;
+	justify-content: center;
+	align-items: center;
+	overflow: hidden;
+}
+
+#canva-pong {
+	border: 5px solid #131316;
+	border-radius: 5px;
+}
+
+@media (max-width: 800px) {
+	#canva-pong {
+		transform: rotate(90deg);
+	}
+}
+
+@media (max-width: 410px), (max-width: 800px) and (max-height: 810px) {
+	#canva-pong {
+		transform: rotate(90deg) scale(0.8);
+	}
+}
+
+#custom-input {
+	background-color: #131316;
+	height: 50px;
+	border-radius: 5px;
+	display: flex;
+	align-items: center;
+}
+
+
+#custom-input input {
+	width: 100%;
+	background-color: transparent;
+	outline: none;
+	border: none;
+	color: white;
+}
+
+#custom-input input::placeholder {
+	color: #757575;
+}
+
+#custom-input i {
+	font-size: 21px;
+	color: #aaaaaa;
+}
+
+.fight-widget {
+	background: url("/assets/img/fightwidget.png") no-repeat, #131316;
+	border-radius: 5px;
+	padding: 10px;
+	color: #dfdfdf;
+	width: 100%;
+	min-height: 123px;
+	margin-top: 10px;
+	user-select: none;
+}
+
+@media (min-width: 500px) {
+    .fight-widget {
+        width: 400px !important;
+    }
+}
+
+.no-scroll-text {
+	word-wrap: break-word;
+	overflow-wrap: break-word;
+	word-break: break-all;
+}
+
+.tournament-card {
+	background-color: #171a1d;
+	border-radius: 10px;
+	padding: 15px;
+	width: 300px;
+}
+
+.no-scroll-text {
+	word-wrap: break-word;
+	overflow-wrap: break-word;
+	word-break: break-all;
+}
+
+#toast-container {
+	position: fixed;
+	bottom: 0;
+	right: 0;
+	width: 300px;
+	padding: 10px;
+	box-sizing: border-box;
+	z-index: 10000;
+}
+
+.toast {
+	background-color: white;
+	margin-bottom: 10px;
+	padding: 15px;
+	border-radius: 5px;
+	position: relative;
+	transition:
+	  transform 0.6s ease,
+	  opacity 0.6s ease;
+	opacity: 1;
+	color: #131316;
+}
+
+.toast .fa-times {
+	position: absolute;
+	top: 10px;
+	right: 10px;
+	cursor: pointer;
+}
+
+.toast.hide {
+	transform: translateX(100%);
+	opacity: 0;
+}
