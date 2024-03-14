@@ -73,7 +73,7 @@ class TournamentViewSet(viewsets.ModelViewSet):
             return Response(status=status.HTTP_400_BAD_REQUEST,
                             data={'error': "Alias '{}' is already taken for this tournament.".format(data['alias'])})
 
-        serializer = ParticipantSerializer(data=data)
+        serializer = ParticipantSerializer(data=data, instance=participant)
         if serializer.is_valid():
             serializer.save()
             return Response(status=status.HTTP_202_ACCEPTED)
