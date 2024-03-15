@@ -1,5 +1,5 @@
 import { loadPage } from "../router.js";
-import { getData } from "../store.js";
+import {getData, setData} from "../store.js";
 import {
 	getSocket,
 	initializeSocket,
@@ -211,6 +211,7 @@ export function analyzeGameRequest(data) {
 	if (getData('route.path') !== '/games/multiplayer' && data.type !== "error")
 		loadPage('/games/multiplayer');
 	if (!gameInfo) return;
+	setData({game: {waiting: false}}, {reload: false});
 	if (data.type === "error") return showToast(data.message);
 	if (data.action === ActionStatus.CREATED) {
 		// startBtn change text to Partie créée and add disabled
