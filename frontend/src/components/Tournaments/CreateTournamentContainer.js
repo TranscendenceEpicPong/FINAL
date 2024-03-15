@@ -98,7 +98,7 @@ export default (props) => {
 				method: function () {
 					const input = document.querySelector('input[id="create_tournament_users"]');
 					const userList = document.querySelector("#user_list");
-					const user = input.value.toLowerCase();
+					const user = input.value;
 					// check if the user already exist
 					const users = document.querySelectorAll("#user_list p");
 					let userExist = false;
