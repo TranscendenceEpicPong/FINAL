@@ -133,6 +133,9 @@ class GameConsumer(AsyncWebsocketConsumer):
         if await sync_to_async(tournament.count)() == 0:
             return await self.not_found_tournament()
         tournament = await sync_to_async(tournament.first)()
+        game = await sync_to_async(Game.objects.filter)(player1=user, status=Status.RESERVED.value, tournament__isnull=False)
+        if await sync_to_async(game.count)() > 0:
+            return await self.in_tournament()
         game = await sync_to_async(Game.objects.filter)(Q(player1=user, player2=invited_user) | Q(player1=invited_user, player2=user), Q(status=Status.WAITING.value) | Q(status=Status.RESERVED.value), tournament=tournament)
         if await sync_to_async(game.count)() == 0:
             return await self.not_found_game()
