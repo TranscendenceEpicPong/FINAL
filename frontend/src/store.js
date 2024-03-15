@@ -28,6 +28,7 @@ const schema = {
         online: 'boolean'
     },
     game: {
+        waiting: 'boolean',
         mode: ['local', 'duel', 'tournament'],
         tournament: {
             players: 'array'
@@ -172,6 +173,9 @@ export async function initStore() {
     setData({
         serverInfo: server_info,
         auth: getUserInfo(),
+        game: {
+            waiting: false
+        }
     }, {
         reload: false
     })

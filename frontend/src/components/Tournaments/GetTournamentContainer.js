@@ -1,5 +1,5 @@
 import { html } from "../../html.js";
-import { getData } from "../../store.js";
+import {getData, setData} from "../../store.js";
 import { loadPage } from "../../router.js";
 import { sendToSocket } from "../../utils/socket.js";
 
@@ -79,8 +79,12 @@ export default (props) => {
 										match.player2.alias :
 										match.player1.alias}
 								</p>
-								<button class="btn btn-info btn-sm btn-start-tournament-game" data-username="${match.player1.username === current_user ? match.player2.username :
-										match.player1.username}">
+								<button class="btn btn-info btn-sm btn-start-tournament-game" 
+										data-username="${match.player1.username === current_user ? 
+											match.player2.username : 
+											match.player1.username}"
+										${getData('game.waiting') ? "disabled='disabled'": ""}
+								>
 									Join Game
 								</button>
 							</div>
@@ -136,6 +140,9 @@ export default (props) => {
 				event: 'click',
 				method: function(e)
 				{
+					if (getData('game.waiting'))
+						return;
+					setData({game: {waiting: true}}, false);
 					console.log(e.target);
 					sendToSocket({
 						action: 'join-tournament-game',

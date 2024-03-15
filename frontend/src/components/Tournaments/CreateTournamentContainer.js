@@ -107,7 +107,7 @@ export default (props) => {
 							userExist = true;
 						}
 					});
-					if (userExist) {
+					if (userExist || getData('auth.user.username') === user) {
 						return;
 					}
 					if (user) {
