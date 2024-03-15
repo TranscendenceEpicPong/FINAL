@@ -137,18 +137,20 @@ class Tournament(models.Model):
             self.participants.filter(user__in=losers).update(is_active=False)
 
     def notify(self, match):
-        async_to_sync(get_channel_layer().group_send)(
+        print("Alert sending")
+        channel_layer = get_channel_layer()
+        async_to_sync(channel_layer.group_send)(
             f"core-{match.player1.id}",
             {
                 'type': 'send_alert',
-                'content': f"Tournois: {match.tournament.name}. Un nouveau match est disponible contre {match.player2.alias}",
+                'content': f"Tournois: {match.tournament.name}. Un nouveau match est disponible contre {match.tournament.participants.get(user=match.player2).alias}",
             }
         )
-        async_to_sync(get_channel_layer().group_send)(
+        async_to_sync(channel_layer.group_send)(
             f"core-{match.player2.id}",
             {
                 'type': 'send_alert',
-                'content': f"Tournois: {match.tournament.name}. Un nouveau match est disponible contre {match.player1.alias}",
+                'content': f"Tournois: {match.tournament.name}. Un nouveau match est disponible contre {match.tournament.participants.get(user=match.player1).alias}",
             }
         )
 
@@ -204,12 +206,14 @@ class Tournament(models.Model):
                     player2=opponent1.user,
                     phase=self.Phases.POOL_PHASE,
                 )
+                self.notify(match1)
                 match2 = Match.objects.create(
                     tournament=self,
                     player1=player1.user,
                     player2=opponent2.user,
                     phase=self.Phases.POOL_PHASE,
                 )
+                self.notify(match2)
             else:
                 player1 = random.choice(participants_list_1free)
                 participants_list_1free.remove(player1)
@@ -223,6 +227,8 @@ class Tournament(models.Model):
                     player2=opponent1.user,
                     phase=self.Phases.POOL_PHASE,
                 )
+                self.notify(match)
+
 
     def get_registered_player(self, user):
         return self.participants.get(user=user)
