@@ -78,6 +78,27 @@ export const clearChats = () => {
 	store.chats = [];
 }
 
+export function clearStore()
+{
+    for (const prop in store) {
+        if (typeof store[prop] === "object") {
+            store[prop] = {};
+        }
+        else if (typeof store[prop] === "array") {
+            store[prop] = [];
+        }
+        else {
+            store[prop] = undefined;
+        }
+    }
+}
+
+export function resetStore()
+{
+    clearStore();
+    initStore();
+}
+
 export const setData = async (
     update,
     options = { reload: true },
