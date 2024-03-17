@@ -239,6 +239,7 @@ export function analyzeGameRequest(data) {
 		startBtn.textContent = "Rejoindre / créer";
 		startBtn.disabled = false;
 		render(data.game);
+		clearInterval(game.interval);
 		return showToast(
 			`Partie terminée ${
 				getData("auth.user.id") == data.game.winner
