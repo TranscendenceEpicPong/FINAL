@@ -50,6 +50,10 @@ class UserUpdateForm(forms.ModelForm):
             raise forms.ValidationError(
                 "Les mots de passe ne sont pas identiques"
             )
+        if password and self.instance.id42 is not None:
+            raise forms.ValidationError(
+                "Vous ne pouvez pas changer votre mot de passe"
+            )
         if cleaned_data.get('password') and len(cleaned_data.get('password')) > 0:
             if cleaned_data.get('password') != cleaned_data.get('confirm_password'):
                 raise forms.ValidationError(
