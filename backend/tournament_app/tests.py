@@ -129,7 +129,7 @@ class PhasesTestCase(TestCase):
             match.save()
 
         tournament.update_tournament_results()
-        tournament.start_next_phase()
+        tournament.check_next_phase()
 
     def assertNextPhase(self, tournament, expected: Tournament.Phases):
         self.start_next_phase(tournament)
@@ -146,6 +146,16 @@ class PhasesTestCase(TestCase):
         tournament.participants.update(is_active=True)
         self.start_next_phase(tournament)
         self.assertNextPhase(tournament, Tournament.Phases.FINAL_PHASE)
+
+    def test_tournament_end(self):
+        tournament = create_tournament(3)
+        tournament.participants.update(is_active=True)
+        self.start_next_phase(tournament)
+        self.assertNextPhase(tournament, Tournament.Phases.FINAL_PHASE)
+        tournament.check_next_phase()
+        self.assertNextPhase(tournament, Tournament.Phases.END)
+        tournament.check_next_phase()
+        self.assertNextPhase(tournament, Tournament.Phases.END)
 
     def test_four_participants(self):
         for i in range(4, 8):
@@ -178,7 +188,7 @@ class ScoreTest(TestCase):
     def setUp(self):
         self.tournament = create_tournament(8)
         self.tournament.participants.update(is_active=True)
-        self.tournament.start_next_phase()
+        self.tournament._start_next_phase()
 
     def test_random_score(self):
         base_first: RegistrationTournament = self.tournament.ranking.first()
@@ -206,7 +216,7 @@ class ScoreTest(TestCase):
         for index, participant in enumerate(participants):
             participant.points = index
 
-        self.tournament.start_next_phase()
+        self.tournament._start_next_phase()
 
         match = self.tournament.current_matches[0]
         self.assertEqual(match.player1, participants[0].user)
