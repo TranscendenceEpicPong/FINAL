@@ -83,7 +83,6 @@ export default (props) => {
 										data-username="${match.player1.username === current_user ? 
 											match.player2.username : 
 											match.player1.username}"
-										${getData('game.waiting') ? "disabled='disabled'": ""}
 								>
 									Join Game
 								</button>
@@ -142,7 +141,6 @@ export default (props) => {
 				{
 					if (getData('game.waiting'))
 						return;
-					setData({game: {waiting: true}}, false);
 					console.log(e.target);
 					sendToSocket({
 						action: 'join-tournament-game',
