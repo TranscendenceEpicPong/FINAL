@@ -1,6 +1,7 @@
 import {html} from "../../html.js";
 import { getData } from "../../store.js";
 import {initAuth} from "../../auth.js";
+import {loadPage} from "../../router.js";
 
 export default async () => {
     console.log("42 REGISTER")
@@ -11,7 +12,7 @@ export default async () => {
     .then(response => {
         console.log(response)
         if (response.ok)
-            return setTimeout(async () => await initAuth('/'), 1000);
+            return setTimeout(async () => await loadPage(await initAuth()), 1000);
     });
     return html`
 		<div style="background: #252a2f; color: #ffffff; display: flex; justify-content: center; align-items: center;height:100svh;">
