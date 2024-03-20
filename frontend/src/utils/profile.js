@@ -93,14 +93,6 @@ export async function loadProfile(user)
 		addMessage(chat, false);
 	});
 
-    // console.warn({
-    //     friends,
-    //     blocks,
-    //     auth: {
-    //         user: user ?? await fetchMe()
-    //     }
-    // })
-
     setData({
         friends,
         blocks,
