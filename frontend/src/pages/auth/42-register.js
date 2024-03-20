@@ -4,11 +4,13 @@ import { getData } from "../../store.js";
 import { initAccess } from "../../utils/profile.js";
 
 export default async () => {
+    console.log("42 REGISTER")
     const response = await fetch(`${process.env.BASE_URL}/authentication/42-register/?code=${getData('auth_42.code')}`, {
         credentials: "include",
         mode: "cors",
     })
     .then(response => {
+        console.log(response)
         if (response.ok)
             return setTimeout(async () => await initAccess('/'), 1000);
     });

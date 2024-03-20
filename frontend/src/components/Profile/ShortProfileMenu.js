@@ -1,11 +1,10 @@
 import { html } from "../../html.js";
-import { getData } from "../../store.js";
 import {loadPage} from "../../router.js";
-import {setData} from "../../store.js";
+import {setData, getData} from "../../store.js";
 import {getUserInfo, postData} from "../../api.js";
 import { resetSockets } from "../../utils/socket.js";
 
-export default (props) => {
+export default async (props) => {
 	let displayProfileMenu = getData("displayProfileMenu") || "d-none";
 	// set displayProfileMenu to "d-none" to hide the menu
 	return {

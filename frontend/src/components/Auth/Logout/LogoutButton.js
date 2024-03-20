@@ -15,18 +15,13 @@ export default (props) => {
             {
                 selector: "button",
                 event: "click",
-                method: () => {
-                    postData(`${process.env.BASE_URL}/authentication/logout`).then(async (response) => {
-                        resetSockets();
-                        loadPage("/auth/login");
-                    })
-                    .catch((error) => {
-                        if (error.status === 401)
-                            loadPage("/auth/login");
-                    })
-                    .finally(() => {
-                        resetStore();
-                    });
+                method: async () => {
+                    const res = await postData(`${process.env.BASE_URL}/authentication/logout`);
+                    resetSockets();
+                    console.dir(window.store)
+                    await resetStore();
+                    console.dir(window.store)
+                    return await loadPage("/auth/login");
                 }
             }
         ]
