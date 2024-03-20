@@ -81,18 +81,7 @@ export const clearChats = () => {
 
 export function clearStore()
 {
-    for (const prop in store) {
-        if (typeof store[prop] === "object") {
-            store[prop] = {};
-        }
-        else if (typeof store[prop] === "array") {
-            store[prop] = [];
-        }
-        else {
-            store[prop] = undefined;
-        }
-    }
-    window.store = store
+    Object.keys(store).forEach(key => delete store[key]);
 }
 
 export async function resetStore()
