@@ -2,7 +2,7 @@ import { html } from "../../../html.js";
 import { getUserInfo, postData } from "../../../api.js";
 import { loadPage } from "../../../router.js";
 import { setData } from "../../../store.js";
-import { loadProfile } from "../../../utils/profile.js";
+import { initAccess, loadProfile } from "../../../utils/profile.js";
 
 export default () => {
     return {
@@ -56,16 +56,14 @@ export default () => {
                     ).then(async (data) => {
                         console.log('LOGIN SUCCESS');
                         await setData({auth: getUserInfo()}, {reload: false})
-                        await loadProfile();
-                        await loadPage('/');
+                        await initAccess('/');
                     }).catch((err) => {
-                        console.log('LOGIN ERROR');
+                        let error = '';
                         console.error(err)
-                        if (typeof err.status === "string" && err.status.toLowerCase() === "unauthorized") {
-                            showToast("Nom d'utilisateur ou mot de passe incorrect")
-                        }else{
-                            loadPage('/auth/a2f');
+                        for (const [key, value] of Object.entries(err)) {
+                            error += `${value}\n`;
                         }
+                        showToast(error);
                     })
                 }
             },

@@ -33,10 +33,10 @@ def CustomAuthenticationMiddleware(get_response):
             return getJsonResponse({"message": "2FA required", "status": 401})
 
         response: JsonResponse = get_response(request)
-
-        response.set_cookie('authorization',
-                            value=create_token(EpicPongUser(username=request.user.username),
-                                               token.get('a2f_enabled')),
+        if request.path != '/authentication/check-code':
+            response.set_cookie('authorization',
+                            value=create_token(EpicPongUser.objects.filter(username=request.user.username).first(),
+                                               token.get('a2f_verified')),
                             path='/',
                             samesite='Strict')
 

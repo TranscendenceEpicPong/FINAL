@@ -1,7 +1,7 @@
 import { html } from "../../../html.js";
 import { getUserInfo, postData } from "../../../api.js";
 import { loadPage } from "../../../router.js";
-import { loadProfile } from "../../../utils/profile.js";
+import { initAccess, loadProfile } from "../../../utils/profile.js";
 import { setData } from "../../../store.js";
 
 export default () => {
@@ -98,8 +98,7 @@ export default () => {
                         {...reqBody}
                     ).then(async (data) => {
                         await setData({auth: getUserInfo()}, {reload: false})
-                        await loadProfile();
-                        await loadPage('/');
+                        await initAccess('/');
                     }).catch((err) => {
                         let error = '';
                         console.error(err)
