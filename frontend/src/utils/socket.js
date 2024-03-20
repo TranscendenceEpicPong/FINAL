@@ -59,6 +59,7 @@ function getSocketURL(name)
 
 export function initializeSockets()
 {
+    console.info("Initialize sockets");
     for (const socket in urls)
         if (urls[socket].auto_initialize)
             initializeSocket(socket);
