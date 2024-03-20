@@ -37,7 +37,7 @@ class TournamentViewSet(viewsets.ModelViewSet):
             return Response(status=status.HTTP_400_BAD_REQUEST,
                             data={'error': "'You need at least 3 registered participants!"})
 
-        tournament.start_next_phase()
+        tournament._start_next_phase()
         return Response(status=status.HTTP_201_CREATED,
                         data={
                             'status': 'Tournament started!',

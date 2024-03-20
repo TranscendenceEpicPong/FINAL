@@ -10,15 +10,18 @@ export async function initAuth()
 
     const set = (update) => setData(update, { reload: false });
 
+    const user_info = getUserInfo();
+
     // Maybe not the best way to find it but seems to work
     const isOAuth2Flow = path === '/auth/42-register' && !!params['code']
     if (isOAuth2Flow) {
+        if (user_info.loggedIn) {
+            return '/';
+        }
         await resetStore()
         set({ auth_42: params });
         return path;
     }
-
-    const user_info = getUserInfo();
 
     if (!user_info.loggedIn) {
         return !['/auth/login', '/auth/register', '/auth/42-register'].includes(path) ?
