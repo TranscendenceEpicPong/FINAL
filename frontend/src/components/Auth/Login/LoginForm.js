@@ -3,6 +3,7 @@ import { getUserInfo, postData } from "../../../api.js";
 import { loadPage } from "../../../router.js";
 import { setData } from "../../../store.js";
 import { loadProfile } from "../../../utils/profile.js";
+import {initAuth} from "../../../auth.js";
 
 export default () => {
     return {
@@ -55,8 +56,7 @@ export default () => {
                         reqBody
                     ).then(async (data) => {
                         console.log('LOGIN SUCCESS');
-                        await setData({auth: getUserInfo()}, {reload: false})
-                        await loadProfile();
+                        await initAuth();
                         await loadPage('/');
                     }).catch((err) => {
                         console.log('LOGIN ERROR');

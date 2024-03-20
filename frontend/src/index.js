@@ -174,20 +174,7 @@ async function initApp() {
 
 window.addEventListener("load", async () => {
 	console.info("LOAD event");
-	// const path = window.location.pathname;
-	// const search = window.location.search;
-	// const params = {};
-	// search
-	// 	.substring(1)
-	// 	.split("&")
-	// 	.forEach((param) => {
-	// 		const [key, value] = param.split("=");
-	// 		params[key] = value;
-	// 	});
-
 	await initApp();
-
-	// await initAccess(path);
 });
 
 window.addEventListener("popstate", async (e) => {

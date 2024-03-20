@@ -1,6 +1,7 @@
-import {getUserInfo, resetUserInfo} from "./api.js";
+import {getUserInfo, postData, resetUserInfo} from "./api.js";
 import {fetchMe, loadProfile} from "./utils/profile.js";
 import {getData, resetStore, setData} from "./store.js";
+import {resetSockets} from "./utils/socket.js";
 import {loadPage} from "./router.js";
 
 export async function initAuth()
@@ -24,14 +25,15 @@ export async function initAuth()
                 '/auth/login' : path
     }
 
+    if (user_info.user.a2f_enabled && !user_info.user.a2f_verified) {
+        console.dir("2FA", user_info)
+        return '/auth/a2f'
+    }
+
     const me = await fetchMe();
     if (!me) {
         set({auth: resetUserInfo()});
         return '/auth/login'
-    }
-
-    if (user_info.user.a2f_enabled && !user_info.user.a2f_verified) {
-        return '/auth/a2f'
     }
 
     await loadProfile(me);
