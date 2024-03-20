@@ -87,7 +87,6 @@ export function clearStore()
 export async function resetStore()
 {
     clearStore();
-    console.dir(window.store)
     await initStore();
 }
 
@@ -102,7 +101,7 @@ export const setData = async (
     }
 
     for (const prop in update) {
-        console.info(prop)
+        // console.info(prop)
         if (!prop in schema_iter) {
             return console.error(
                 `${prop} in not a valid key for `,
@@ -115,7 +114,7 @@ export const setData = async (
             schema_iter[prop] !== "object"
         ) {
             if (!store_iter[prop]) {
-                console.warn(`Init prop ${prop} at {}`)
+                // console.warn(`Init prop ${prop} at {}`)
                 store_iter[prop] = {};
             }
             await setData(
@@ -131,7 +130,7 @@ export const setData = async (
         else if (isValid(prop, update[prop], schema_iter[prop])) {
             if (schema_iter[prop] === "array") {
                 if (!store_iter[prop]) store_iter[prop] = [];
-                console.warn(prop, schema_iter[prop], store_iter[prop], update[prop])
+                // console.warn(prop, schema_iter[prop], store_iter[prop], update[prop])
                 store_iter[prop].push(...update[prop]);
             } else {
                 store_iter[prop] = update[prop];

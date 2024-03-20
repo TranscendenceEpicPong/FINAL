@@ -1,9 +1,9 @@
-import { getUserInfo } from "../api.js";
-import { loadPage } from "../router.js";
-import { setData, getData } from "../store.js";
-import { isArray } from "../utils.js";
-import { addMessage } from "./chats.js";
-import { initializeSockets } from "./socket.js";
+import {getUserInfo} from "../api.js";
+import {loadPage} from "../router.js";
+import {getData, setData} from "../store.js";
+import {isArray} from "../utils.js";
+import {addMessage} from "./chats.js";
+import {initializeSockets} from "./socket.js";
 
 export async function fetchMe()
 {
@@ -93,13 +93,13 @@ export async function loadProfile(user)
 		addMessage(chat, false);
 	});
 
-    console.warn({
-        friends,
-        blocks,
-        auth: {
-            user: user ?? await fetchMe()
-        }
-    })
+    // console.warn({
+    //     friends,
+    //     blocks,
+    //     auth: {
+    //         user: user ?? await fetchMe()
+    //     }
+    // })
 
     setData({
         friends,
@@ -119,11 +119,8 @@ export function isCurrentUser(username)
 
 export async function getProfile(username)
 {
-    const profile = await fetch(`${process.env.BASE_URL}/users/${username}`, {
+    const res = await fetch(`${process.env.BASE_URL}/users/${username}`, {
         credentials: "include"
-    })
-    .then(async (response) => {
-        return await response.json();
     });
-    return profile;
+    return res.json()
 }
