@@ -57,7 +57,7 @@ export default () => {
                     ).then(async (data) => {
                         console.log('LOGIN SUCCESS');
                         const nextPath = await initAuth();
-                        await loadPage(nextPath);
+                        await loadPage(nextPath === '/auth/a2f' ? nextPath : '/');
                     }).catch((err) => {
                         console.log('LOGIN ERROR');
                         console.error(err)
