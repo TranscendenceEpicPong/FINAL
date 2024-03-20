@@ -136,7 +136,9 @@ class TournamentSerializer(serializers.ModelSerializer):
                         tournament=tournament
                     ).alias,
                 },
-                'winner': getattr(match.get_winner(), 'username', None),
+                'winner': tournament.participants.get(
+                    user=match.winner
+                ).alias if match.winner else None,
                 'phase': match.phase,
                 'state': match.status,
                 'score_player1': match.score_player1,
