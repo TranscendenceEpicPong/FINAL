@@ -395,6 +395,10 @@ class GameConsumer(AsyncWebsocketConsumer):
             return
         game = game.all()
         for g in game:
+            if self.players.get(f"{user.id}") == f"{g.id}":
+                self.players.pop(f"{user.id}")
+            if self.games.get(f"{g.id}"):
+                self.games.pop(f"{g.id}")
             g.delete()
 
     async def disconnect(self, close_code):
