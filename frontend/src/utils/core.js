@@ -7,7 +7,7 @@ function updateUsername(user)
 	const username = user.username;
 
 	if (userId === getData('auth.user.id'))
-		setData({user: {username}});
+		setData({auth: {user: {username}}});
 	const friends = getData('friends.active');
 	const updated_friends = friends.map(f => {
 		if (f.sender.id === userId)
