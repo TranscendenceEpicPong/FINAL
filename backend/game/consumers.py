@@ -516,6 +516,7 @@ class GameConsumer(AsyncWebsocketConsumer):
                 await self.update_user_status(self.games[f"{game_id}"]["player1"]["id"], "online")
                 await self.update_user_status(self.games[f"{game_id}"]["player2"]["id"], "online")
             self.players.pop(f"{game['player1']['id']}")
+            self.players.pop(f"{game['player2']['id']}")
             self.games.pop(f"{game_id}")
             if self.tasks.get(f"{game_id}"):
                 self.tasks.get(f"{game_id}").cancel()
