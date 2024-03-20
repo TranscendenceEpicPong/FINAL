@@ -20,7 +20,7 @@ class Command(BaseCommand):
         try:
             tournament = Tournament.objects.get(id=id)
             print(tournament)
-            tournament.start_next_phase()
+            tournament.check_next_phase()
             self.stdout.write(self.style.SUCCESS(f'Successfully started the next phase for tournament "{id}"'))
         except Tournament.DoesNotExist:
             self.stderr.write(self.style.ERROR(f'Tournament "{id}" does not exist'))

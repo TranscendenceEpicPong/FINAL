@@ -4,7 +4,7 @@ import random
 from itertools import zip_longest
 import logging  # error
 from channels.layers import get_channel_layer
-from asgiref.sync import sync_to_async, async_to_sync
+from asgiref.sync import async_to_sync
 from django.db.models import QuerySet
 from game.status import Status
 
@@ -18,6 +18,7 @@ PHASE_LIMITS = [
     ('quarter', 8),
     ('semi', 4),
     ('final', 2),
+    ('end', 0),
 ]
 
 
@@ -29,6 +30,7 @@ class Tournament(models.Model):
         QUARTER_PHASE = 'quarter'
         SEMI_PHASE = 'semi'
         FINAL_PHASE = 'final'
+        END = 'end'
 
     name = models.CharField(max_length=50)
     phase = models.CharField(choices=Phases,
@@ -70,13 +72,8 @@ class Tournament(models.Model):
         return self.matches.filter(phase=self.phase)
 
     def get_next_phase(self):
-        # print("Get next phase")
-
         if self.phase == self.Phases.NOT_STARTED:
             return self.Phases.POOL_PHASE
-
-        if self.phase == self.Phases.FINAL_PHASE:
-            return None
 
         if self.phase == self.Phases.POOL_PHASE and self.active_count < MAX_PARTICIPANTS:
             phase_index = self.phase_index
@@ -88,7 +85,7 @@ class Tournament(models.Model):
         value = self.Phases.choices[phase_index][0]
         return self.Phases(value)
 
-    def start_next_phase(self):
+    def _start_next_phase(self):
         # Check amount of participants
         if MIN_PARTICIPANTS > self.participants.count() > MAX_PARTICIPANTS:
             logging.error(f'Tournament "{self.name}" invalid number of participants.')
@@ -98,10 +95,10 @@ class Tournament(models.Model):
 
         next_phase = self.get_next_phase()
         if next_phase is None:
+            logging.error(f'Tournament "{self.name}" has no more phases available')
             raise Exception("No more phases")
 
-        # print(f"Next phase: {next_phase}")
-
+        print(f"Set next phase to: {next_phase}")
         self.phase = next_phase
         self.save()
 
@@ -111,7 +108,7 @@ class Tournament(models.Model):
         if self.phase == self.Phases.POOL_PHASE:
             self.participants.filter(is_active=False).delete()
 
-        if self.phase != self.Phases.NOT_STARTED:
+        if self.phase not in [self.Phases.NOT_STARTED, self.Phases.END]:
             self.organize_next_matches()
 
     def get_ranking_dict(self):
@@ -137,7 +134,6 @@ class Tournament(models.Model):
             self.participants.filter(user__in=losers).update(is_active=False)
 
     def notify(self, match):
-        print("Alert sending")
         channel_layer = get_channel_layer()
         async_to_sync(channel_layer.group_send)(
             f"core-{match.player1.id}",
@@ -229,7 +225,6 @@ class Tournament(models.Model):
                 )
                 self.notify(match)
 
-
     def get_registered_player(self, user):
         return self.participants.get(user=user)
 
@@ -267,11 +262,14 @@ class Tournament(models.Model):
             loser.save()
 
     def check_next_phase(self):
+        if self.phase == self.Phases.END:
+            return False
+
         for match in self.current_matches:
             if match.status != Status.FINISHED.value:
                 return False
 
-        self.start_next_phase()
+        self._start_next_phase()
 
 
 class RegistrationTournament(models.Model):
