@@ -15,6 +15,7 @@ export async function initAuth()
     // Maybe not the best way to find it but seems to work
     const isOAuth2Flow = path === '/auth/42-register' && !!params['code']
     if (isOAuth2Flow) {
+        // console.dir(user_info)
         if (user_info.loggedIn) {
             return '/';
         }

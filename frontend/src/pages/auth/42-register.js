@@ -7,7 +7,7 @@ export default async () => {
         credentials: "include",
         mode: "cors",
     });
-    setTimeout(() => window.location.reload(), 1000);
+    setTimeout(() => window.location.replace('/'), 1000);
     return html`
 		<div style="background: #252a2f; color: #ffffff; display: flex; justify-content: center; align-items: center;height:100svh;">
             <div class="text-center">
