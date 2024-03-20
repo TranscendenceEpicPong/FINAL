@@ -5,14 +5,16 @@ import {loadPage} from "../../router.js";
 
 export default async () => {
     console.log("42 REGISTER")
-    const response = await fetch(`${process.env.BASE_URL}/authentication/42-register/?code=${getData('auth_42.code')}`, {
+    const response = fetch(`${process.env.BASE_URL}/authentication/42-register/?code=${getData('auth_42.code')}`, {
         credentials: "include",
         mode: "cors",
     })
-    .then(response => {
+    .then(async (response) => {
         console.log(response)
-        if (response.ok)
-            return setTimeout(async () => await loadPage(await initAuth()), 1000);
+        if (response.ok) {
+            await initAuth();
+            return setTimeout(async () => await loadPage('/'), 1000);
+        }
     });
     return html`
 		<div style="background: #252a2f; color: #ffffff; display: flex; justify-content: center; align-items: center;height:100svh;">
