@@ -36,7 +36,7 @@ def CustomAuthenticationMiddleware(get_response):
 
         response.set_cookie('authorization',
                             value=create_token(EpicPongUser(username=request.user.username),
-                                               token.get('a2f_enabled')),
+                                               token.get('a2f_verified')),
                             path='/',
                             samesite='Strict')
 

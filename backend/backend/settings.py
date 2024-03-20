@@ -29,10 +29,10 @@ env = environ.Env(
     APP_NAME=(str, 'EpicPong'),
     CLIENT_ID=(str, "NO CLIENT ID"),
     CLIENT_SECRET=(str, "NO CLIENT SECRET"),
-    REDIRECT_URI=(str, "http://10.0.0.3:8080/auth/42-register"),
+    REDIRECT_URI=(str, "http://localhost:8080/auth/42-register"),
     AUTHORIZE_URL=(str, "https://api.intra.42.fr/oauth/authorize"),
     TOKEN_URL=(str, "https://api.intra.42.fr/oauth/token"),
-    DOMAIN_NAME=(str, "ttt.42lausanne.ch"),
+    DOMAIN_NAME=(str, "localhost"),
     SECRET_KEY=(str, 'django-insecure-otc*6$yc^vbe&m1uzzt!0jt^l=4r4=q&3#voh5een44bu4v)u#')
 )
 

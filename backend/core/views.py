@@ -6,9 +6,8 @@ from core.models import EpicPongUser as User
 import json
 import jwt
 from backend.settings import env
-from .status import StatusError, StatusSuccess
-from .service import UserService
-from core.helpers import get_response, get_cookie
+from .status import StatusError
+from core.helpers import get_response
 from django.contrib.auth import \
     get_user_model, \
     get_user, \
@@ -19,9 +18,8 @@ from .forms import UserUpdateForm
 from game.models import Game
 from django.db.models import Q
 from game.status import Status
-from channels.layers import get_channel_layer
-from asgiref.sync import sync_to_async, async_to_sync
 from core.consumers import update_username_for_friends
+
 
 @require_GET
 def server_info(request):
@@ -41,7 +39,7 @@ def search(request, username):
     user = User.objects.filter(username=username).first()
     block_service = BlockService(user)
     if user is None or block_service.is_block(owner):
-        return get_response({ "message": "Utilisateur introuvable", "status": 404})
+        return get_response({"message": "Utilisateur introuvable", "status": 404})
     games = Game.objects.filter(Q(player1=user) | Q(player2=user))
     victory = games.filter(winner=user).count()
     defeat = games.filter(status=Status.FINISHED.value).exclude(winner=user).count()
