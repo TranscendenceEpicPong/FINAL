@@ -56,8 +56,8 @@ export default () => {
                         reqBody
                     ).then(async (data) => {
                         console.log('LOGIN SUCCESS');
-                        await initAuth();
-                        await loadPage('/');
+                        const nextPath = await initAuth();
+                        await loadPage(nextPath);
                     }).catch((err) => {
                         console.log('LOGIN ERROR');
                         console.error(err)
