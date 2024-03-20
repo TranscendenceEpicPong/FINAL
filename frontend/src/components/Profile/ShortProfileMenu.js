@@ -3,6 +3,7 @@ import {loadPage} from "../../router.js";
 import {setData, getData} from "../../store.js";
 import {getUserInfo, postData} from "../../api.js";
 import { resetSockets } from "../../utils/socket.js";
+import {logout} from "../../auth.js";
 
 export default async (props) => {
 	let displayProfileMenu = getData("displayProfileMenu") || "d-none";
@@ -129,24 +130,7 @@ export default async (props) => {
 			{
                 selector: "#logout-button",
                 event: "click",
-                method: () => {
-                    postData(`${process.env.BASE_URL}/authentication/logout`).then(async (response) => {
-                        resetSockets();
-                        setData({
-                            auth: getUserInfo(),
-                            friends: {
-                                active: null,
-                                waiting: null,
-                            },
-                            blocks: null,
-                        });
-                        loadPage("/auth/login");
-                    })
-                    .catch((error) => {
-                        if (error.status === 401)
-                            loadPage("/auth/login");
-                    })
-                }
+                method: logout
             },
 			{
 				selector: "#profile-button",

@@ -38,3 +38,13 @@ export async function initAuth()
 
     return path
 }
+
+export async function logout()
+{
+    const res = await postData(`${process.env.BASE_URL}/authentication/logout`);
+    resetSockets();
+    console.dir(window.store)
+    await resetStore();
+    console.dir(window.store)
+    return await loadPage("/auth/login");
+}
