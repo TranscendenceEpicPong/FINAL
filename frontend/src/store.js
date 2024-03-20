@@ -1,12 +1,12 @@
 import {loadPage} from "./router.js";
 import {isArray, isObject} from "./utils.js";
-import {getUserInfo} from "./api.js";
 
 const store = {};
 
 const schema = {
     route: {
-        path: 'string'
+        path: 'string',
+        params: 'object'
     },
     auth: {
         loggedIn: 'boolean',
@@ -81,23 +81,14 @@ export const clearChats = () => {
 
 export function clearStore()
 {
-    for (const prop in store) {
-        if (typeof store[prop] === "object") {
-            store[prop] = {};
-        }
-        else if (typeof store[prop] === "array") {
-            store[prop] = [];
-        }
-        else {
-            store[prop] = undefined;
-        }
-    }
+    Object.keys(store).forEach(key => delete store[key]);
 }
 
-export function resetStore()
+export async function resetStore()
 {
     clearStore();
-    initStore();
+    console.dir(window.store)
+    await initStore();
 }
 
 export const setData = async (
@@ -111,14 +102,22 @@ export const setData = async (
     }
 
     for (const prop in update) {
+        console.info(prop)
         if (!prop in schema_iter) {
             return console.error(
                 `${prop} in not a valid key for `,
                 schema_iter
             );
         }
-        if (typeof update[prop] === "object" && update[prop] !== null && schema_iter[prop] !== "array") {
-            if (!store_iter[prop]) store_iter[prop] = {};
+        if (typeof update[prop] === "object" &&
+            update[prop] !== null &&
+            schema_iter[prop] !== "array" &&
+            schema_iter[prop] !== "object"
+        ) {
+            if (!store_iter[prop]) {
+                console.warn(`Init prop ${prop} at {}`)
+                store_iter[prop] = {};
+            }
             await setData(
                 update[prop],
                 Object.assign({}, options, {reload: false}),
@@ -132,6 +131,7 @@ export const setData = async (
         else if (isValid(prop, update[prop], schema_iter[prop])) {
             if (schema_iter[prop] === "array") {
                 if (!store_iter[prop]) store_iter[prop] = [];
+                console.warn(prop, schema_iter[prop], store_iter[prop], update[prop])
                 store_iter[prop].push(...update[prop]);
             } else {
                 store_iter[prop] = update[prop];
@@ -150,7 +150,7 @@ export const setData = async (
 
     if (options.reload === true) {
         console.info(`Loading page ${store.route.path}`)
-        await loadPage(store.route.path, false);
+        await loadPage(store.route?.path ?? '/', false);
     }
 
     if (!window.store) window.store = {};
@@ -172,7 +172,6 @@ export async function initStore() {
     const server_info = await fetchServerInfo()
     setData({
         serverInfo: server_info,
-        auth: getUserInfo(),
         game: {
             waiting: false
         }

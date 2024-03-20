@@ -76,7 +76,7 @@ export async function initAccess(path)
     await loadPage(path);
 }
 
-export async function loadProfile()
+export async function loadProfile(user)
 {
     const friends = {
         active: await fetchFriends(),
@@ -93,11 +93,19 @@ export async function loadProfile()
 		addMessage(chat, false);
 	});
 
+    console.warn({
+        friends,
+        blocks,
+        auth: {
+            user: user ?? await fetchMe()
+        }
+    })
+
     setData({
         friends,
         blocks,
         auth: {
-            user: await fetchMe()
+            user: user ?? await fetchMe()
         }
     }, {reload: false});
 

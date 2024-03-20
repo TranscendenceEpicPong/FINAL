@@ -14,6 +14,18 @@ export function getCookie(name) {
     return cookieValue;
 }
 
+export function deleteCookie(name, path, domain) {
+    const cookieExists = document.cookie.split(';').some(c => {
+        return c.trim().startsWith(name + '=');
+    });
+    if(cookieExists) {
+        document.cookie = name + "=" +
+            ((path) ? ";path="+path:"")+
+            ((domain)?";domain="+domain:"") +
+            ";expires=Thu, 01 Jan 1970 00:00:01 GMT";
+    }
+}
+
 function parseJwt (token) {
     const base64Url = token.split('.')[1];
     const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
@@ -41,6 +53,11 @@ export function getUserInfo() {
             a2f_verified: userInfo.a2f_verified
         }
     }
+}
+
+export function resetUserInfo() {
+    deleteCookie('authorization', '/');
+    return {loggedIn: false, user: null};
 }
 
 export async function postData(url = "", data = {}, method = "POST") {

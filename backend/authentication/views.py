@@ -30,10 +30,11 @@ def create_token(user: EpicPongUser, a2f_verified: bool) -> str:
     }, env('JWT_SECRET'))
 
 
-def perform_auth(request, creds) -> Tuple[JsonResponse, EpicPongUser]:
-    user = django_authenticate(request,
-                               username=creds['username'],
-                               password=creds['password'])
+def perform_auth(request, creds=None, user: EpicPongUser = None) -> Tuple[JsonResponse, EpicPongUser]:
+    if creds:
+        user = django_authenticate(request,
+                                   username=creds['username'],
+                                   password=creds['password'])
     if user is None:
         return JsonResponse({
             "status": "unauthorized",
@@ -143,7 +144,7 @@ def login42_callback(request):
         user = EpicPongUser.objects.create_user(id42=id42, username=username, password=env('PASSWORD_42AUTH'),
                                                 avatar=photo)
 
-    auth_response, user = perform_auth(request, {'username': user.username, 'password': env('PASSWORD_42AUTH')})
+    auth_response, user = perform_auth(request, user=user)
 
     return auth_response
 

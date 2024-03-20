@@ -12,11 +12,19 @@ const resourceRoutes = {
     },
 }
 
+export function initRouter(path, params) {
+    return setData({
+        route: {path, params}
+    }, {
+        reload: false
+    });
+}
+
 export async function loadPage(link = null, pushHistory = true) {
     const router = document.querySelector('#router');
     if (link) {
         await setData({
-            route: {path: link}
+            route: {path: link, params: {}}
         }, {
             reload: false
         });
@@ -42,6 +50,8 @@ export async function loadPage(link = null, pushHistory = true) {
 
     let page_module;
     try {
+        const importPath = `./pages${jsPath === '/' ? '/home' : jsPath}.js`;
+        console.info(`Router load file ${importPath}`)
         page_module = await import(`./pages${jsPath === '/' ? '/home' : jsPath}.js`);
         if (pushHistory) {
             history.pushState({path: link}, '', link);

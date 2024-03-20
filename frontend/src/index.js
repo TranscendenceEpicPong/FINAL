@@ -5,8 +5,8 @@ import "./scss/main.scss";
 //import * as bootstrap from "bootstrap";
 
 import { registerComponent } from "./registerComponent.js";
-import { loadPage } from "./router.js";
-import { initStore, setData } from "./store.js";
+import {initRouter, loadPage} from "./router.js";
+import {initStore, resetStore, setData} from "./store.js";
 import { initAccess } from "./utils/profile.js";
 
 // Components
@@ -81,6 +81,7 @@ import NavBtn from "./components/Form/NavBtn.js";
 
 // Menu
 import MenuBtn from "./components/MenuBtn.js";
+import {initAuth} from "./auth.js";
 
 registerComponent("nav-link", NavLink);
 registerComponent("login-button", LoginButton);
@@ -143,7 +144,7 @@ registerComponent("nav-btn", NavBtn);
 
 registerComponent("chats-friend-not-found", ChatFriendNotFound);
 
-window.addEventListener("load", async () => {
+function getWindowLocation() {
 	const path = window.location.pathname;
 	const search = window.location.search;
 	const params = {};
@@ -154,14 +155,31 @@ window.addEventListener("load", async () => {
 			const [key, value] = param.split("=");
 			params[key] = value;
 		});
-	if (params['code'])
-		await setData({ auth_42: params }, { reload: false });
+
+	return {path, params}
+}
+
+async function initApp() {
+	const { path, params } = getWindowLocation()
+
+	console.info("Initialize store");
 	await initStore();
-	await initAccess(path);
+	console.info("Initialize router");
+	await initRouter(path, params);
+	console.info("Initialize auth");
+
+	const nextPath = await initAuth();
+	await loadPage(nextPath);
+}
+
+window.addEventListener("load", async () => {
+	console.info("LOAD event");
+	await initApp();
 });
 
 window.addEventListener("popstate", async (e) => {
 	e.preventDefault();
+	console.info("POPSTATE event", e);
 	const path = window.location.pathname;
 	const search = window.location.search;
 	console.log(`search: ${search}`);
