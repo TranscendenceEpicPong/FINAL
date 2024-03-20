@@ -1,4 +1,5 @@
 import json
+
 from channels.generic.websocket import WebsocketConsumer
 from asgiref.sync import async_to_sync
 import jwt
@@ -136,6 +137,3 @@ class FriendConsumer(WebsocketConsumer):
 
     def add_friend(self, event):
         self.send(text_data=json.dumps(event))
-
-    def disconnect(self, code):
-        return super().disconnect(code)

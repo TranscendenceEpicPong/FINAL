@@ -103,6 +103,3 @@ class BlockConsumer(WebsocketConsumer):
     def block_message(self, event):
         event['type'] = 'block'
         self.send(text_data=json.dumps(event))
-
-    def disconnect(self, code):
-        return super().disconnect(code)

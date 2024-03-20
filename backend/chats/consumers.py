@@ -1,4 +1,5 @@
 import json
+
 from channels.generic.websocket import WebsocketConsumer
 from asgiref.sync import async_to_sync
 import base64
@@ -127,6 +128,4 @@ class ChatConsumer(WebsocketConsumer):
             'sender': sender,
             'receiver': receiver
         }))
-
-    def disconnect(self, code):
-        return super().disconnect(code)
+        
