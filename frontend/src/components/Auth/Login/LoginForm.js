@@ -1,8 +1,6 @@
 import { html } from "../../../html.js";
-import { getUserInfo, postData } from "../../../api.js";
+import { postData } from "../../../api.js";
 import { loadPage } from "../../../router.js";
-import { setData } from "../../../store.js";
-import { loadProfile } from "../../../utils/profile.js";
 import {initAuth} from "../../../auth.js";
 
 export default () => {
@@ -64,7 +62,7 @@ export default () => {
                         if (typeof err.status === "string" && err.status.toLowerCase() === "unauthorized") {
                             showToast("Nom d'utilisateur ou mot de passe incorrect")
                         }else{
-                            loadPage('/auth/a2f');
+                            loadPage('/');
                         }
                     })
                 }
