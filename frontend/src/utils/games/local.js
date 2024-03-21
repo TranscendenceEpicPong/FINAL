@@ -1,6 +1,6 @@
 let speedIncrease = 1;
 let winningScore = 1;
-let gameInterval;
+let gameInterval = undefined;
 
 function setNumsWins(numwins) {
 	console.log("numwins: ");
@@ -17,7 +17,8 @@ function setBallspeed(ballspeed) {
 export function initializePong(canvas, ctx, numwins, ballspeed) {
 	canvas.width = 800;
 	canvas.height = 400;
-
+	if (gameInterval)
+		clearInterval(gameInterval);
 	setNumsWins(numwins);
 	setBallspeed(ballspeed);
 
