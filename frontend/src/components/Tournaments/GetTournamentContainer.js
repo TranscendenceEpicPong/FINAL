@@ -1,7 +1,7 @@
 import { html } from "../../html.js";
 import {getData, setData} from "../../store.js";
 import { loadPage } from "../../router.js";
-import { sendToSocket } from "../../utils/socket.js";
+import { getSocket, initializeSocket, resetSocket, sendToSocket } from "../../utils/socket.js";
 
 const States = {
 	WAITING: 0,
@@ -89,7 +89,9 @@ export default (props) => {
 								</button>
 							</div>
 						`)}
-						
+						<button class="btn btn-light btn-sm" id="change-game">
+							Change Game
+						</button>
 
 						${!current_participant.is_active && html`
 							<div class="tournament-card">
@@ -156,6 +158,32 @@ export default (props) => {
 				event: "click",
 				method: function () {
 					loadPage("/createtournament");
+				},
+			},
+			{
+				selector: "#change-game",
+				event: "click",
+				method: function () {
+					resetSocket('game');
+					setTimeout(() => {
+						initializeSocket('game');
+						const interval = setInterval(() => {
+							if (getSocket('game').readyState !== WebSocket.OPEN)
+							{
+								showToast('Veuillez patientez...');
+							}
+							else if (getSocket('game').readyState === WebSocket.CLOSED)
+							{
+								showToast('Erreur lors du changement de game, veuillez réessayer.');
+								clearInterval(interval);
+							}
+							else
+							{
+								showToast('Vous pouvez changez de game,');
+								clearInterval(interval);
+							}
+						}, 1000);
+					}, 100);
 				},
 			},
 		],
