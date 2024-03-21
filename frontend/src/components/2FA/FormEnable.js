@@ -1,6 +1,7 @@
 import { getUserInfo, postData } from "../../api.js";
 import {html} from "../../html.js";
 import { getData, setData } from "../../store.js";
+import {logout}  from "../../auth.js";
 
 export default async (props) => {
     let getqrcode = {
@@ -74,8 +75,9 @@ export default async (props) => {
                         reqBody
                     )
                     .then((response) => {
-                        showToast(response.message)
+                        showToast(response.message);
                         setData({auth: getUserInfo()}, {reload: true});
+                        logout();
                     })
                     .catch(error => {
                         showToast(error.message);

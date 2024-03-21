@@ -34,11 +34,12 @@ def CustomAuthenticationMiddleware(get_response):
 
         response: JsonResponse = get_response(request)
 
-        response.set_cookie('authorization',
-                            value=create_token(EpicPongUser(username=request.user.username),
-                                               token.get('a2f_verified')),
-                            path='/',
-                            samesite='Strict')
+        if request.path != '/authentication/check-code':
+            response.set_cookie('authorization',
+                                value=create_token(request.user,
+                                                   token.get('a2f_verified')),
+                                path='/',
+                                samesite='Strict')
 
         return response
 

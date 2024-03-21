@@ -56,8 +56,10 @@ class UserUpdateForm(forms.ModelForm):
                     "Les mot de passe sont différents"
                 )
         else:
-            del cleaned_data['password']
-            del cleaned_data['confirm_password']
+            if password:
+                del cleaned_data['password']
+            if confirm_password:
+                del cleaned_data['confirm_password']
 
         # Ne fonctionnait pas avec un simple "if cleaned_data.get('avatar') and ..."
         if cleaned_data.get('avatar') is not None and len(cleaned_data.get('avatar')) == 0:
