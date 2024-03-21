@@ -137,25 +137,16 @@ class GameConsumer(AsyncWebsocketConsumer):
         if await sync_to_async(game.count)() == 0:
             return await self.not_found_game()
 
-        old_reserved_game = await sync_to_async(Game.objects.filter)(Q(player1=user) | Q(player2=user), status=Status.RESERVED.value, tournament=tournament)
         game = await sync_to_async(game.first)()
-        if await sync_to_async(old_reserved_game.count)() > 0:
-            old_reserved_game = await sync_to_async(old_reserved_game.first)()
-            if old_reserved_game and game.id != old_reserved_game.id:
-                old_reserved_game.status = Status.WAITING.value
-                await sync_to_async(old_reserved_game.save)()
+        if self.players.get(f"{user.id}"):
+            return await self.already_in_game()
 
         if game.status == Status.WAITING.value:
             game.status = Status.RESERVED.value
-            if await sync_to_async(game.get_player)(2) == user:
-                tmp_player = await sync_to_async(game.get_player)(1)
-                game.player1 = user
-                game.player2 = tmp_player
-        elif await sync_to_async(game.get_player)(2) == user:
-            game.status = Status.STARTED.value
         else:
-            return await self.already_in_game()
+            game.status = Status.STARTED.value
         await sync_to_async(game.save)()
+
         self.players[f"{user.id}"] = f"{game.id}"
         if self.games.get(f"{game.id}") is None:
             self.games[f"{game.id}"] = copy.deepcopy(self.games[0])
@@ -420,7 +411,10 @@ class GameConsumer(AsyncWebsocketConsumer):
         if not close_code:
             await self.update_user_status(user.id, "online")
 
-        game = await sync_to_async(Game.objects.filter)(Q(player1=user) | Q(player2=user), Q(status=Status.STARTED.value) | Q(status=Status.RESERVED.value))
+        if self.players.get(f"{user.id}") is None:
+            return super().disconnect(close_code)
+
+        game = await sync_to_async(Game.objects.filter)(id=self.players[f"{user.id}"])
         game = await sync_to_async(game.first)()
         if game is None:
             return
