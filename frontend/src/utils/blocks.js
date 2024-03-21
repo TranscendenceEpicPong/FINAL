@@ -30,6 +30,9 @@ export function makeRequestBlock(username, action)
 
 export function addBlock(blocked_user)
 {
+	let reload = true;
+	if (getData('route.path'))
+		reload = !getData('route.path').startsWith(`/games/`) && !getData('route.path').startsWith(`/tournaments`);
 	removeFriendWaitingItem({
 		sender: blocked_user.sender,
 		receiver: blocked_user.receiver,
@@ -43,7 +46,7 @@ export function addBlock(blocked_user)
 	else
 		removeUsername(blocked_user.sender.username);
 	if (isCurrentUser(blocked_user.sender.username))
-		setData({blocks: [{sender: blocked_user.sender, receiver: blocked_user.receiver}]});
+		setData({blocks: [{sender: blocked_user.sender, receiver: blocked_user.receiver}]}, {reload});
 }
 
 export function removeBlockItem(block)
@@ -58,5 +61,8 @@ export function removeBlockItem(block)
 		}
 		return true;
 	})
-	setData({blocks});
+	let reload = true;
+	if (getData('route.path'))
+		reload = !getData('route.path').startsWith(`/games/`) && !getData('route.path').startsWith(`/tournaments`);
+	setData({blocks}, {reload});
 }
