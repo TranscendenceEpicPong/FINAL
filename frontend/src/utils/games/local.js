@@ -284,8 +284,7 @@ export function initializePong(canvas, ctx, numwins, ballspeed) {
 		const startgame= document.getElementById("startgame");
 		if (startgame) startgame.classList.remove("d-none");
 
-		if (show_winner)
-			showToast(`${winner} wins!`);
+		showToast(`${winner} wins!`);
 	}
 
 	let userTouchY = 0;
