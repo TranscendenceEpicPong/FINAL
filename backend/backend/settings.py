@@ -25,7 +25,6 @@ env = environ.Env(
     MYPY_DJANGO_CONFIG=(str, './mypy.ini'),
     CORS_ALLOWED_ORIGINS=(list, ["http://localhost:8080", "http://localhost"]),
     JWT_SECRET=(str, 'SECRET'),
-    PASSWORD_42AUTH=(str, ''),
     APP_NAME=(str, 'EpicPong'),
     CLIENT_ID=(str, "NO CLIENT ID"),
     CLIENT_SECRET=(str, "NO CLIENT SECRET"),

@@ -128,4 +128,3 @@ class CoreConsumer(AsyncWebsocketConsumer):
             f"{prefix}-{user.id}",
             self.channel_name
         )
-        return super().disconnect(close_code)

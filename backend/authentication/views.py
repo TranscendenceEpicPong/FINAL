@@ -1,6 +1,7 @@
 import json
 from typing import Tuple, cast
 from django.views.decorators.http import require_POST, require_http_methods
+from django.utils.crypto import get_random_string
 import datetime
 from django.contrib.auth import \
     authenticate as django_authenticate, \
@@ -141,7 +142,9 @@ def login42_callback(request):
             while EpicPongUser.objects.filter(username=username).exists():
                 username = f"{username_42}_{str(i)}"
                 i += 1
-        user = EpicPongUser.objects.create_user(id42=id42, username=username, password=env('PASSWORD_42AUTH'),
+        user = EpicPongUser.objects.create_user(id42=id42,
+                                                username=username,
+                                                password=get_random_string(64),
                                                 avatar=photo)
 
     auth_response, user = perform_auth(request, user=user)
