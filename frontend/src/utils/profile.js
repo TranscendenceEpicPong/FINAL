@@ -89,17 +89,17 @@ export async function loadProfile(user)
     const blocks = await fetchBlocks();
 	const chats = await fetchChats();
 
-	chats.forEach(chat => {
-		addMessage(chat, false);
-	});
-
-    setData({
+    await setData({
         friends,
         blocks,
         auth: {
             user: user ?? await fetchMe()
         }
     }, {reload: false});
+
+    chats.forEach(chat => {
+        addMessage(chat, false);
+    });
 
     initializeSockets();
 }
